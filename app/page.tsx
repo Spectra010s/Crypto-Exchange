@@ -26,6 +26,8 @@ import { Badge } from "@/components/ui/badge"
 import { AuthForm } from "@/components/auth/auth-form"
 import { UsernameSetup } from "@/components/auth/username-setup"
 import { ThemeToggle } from "@/components/ui/theme-toggle"
+import { SettingsScreen } from "@/components/settings/settings-screen"
+import { NetworkSelector } from "@/components/wallet/network-selector"
 import { AuthProvider, useAuth } from "@/hooks/use-auth"
 import { fetchCryptocurrencies, type CoinData } from "@/lib/coinmarketcap"
 import { useToast } from "@/hooks/use-toast"
@@ -54,6 +56,9 @@ function CryptoExchangeApp() {
   const [addFundsModalOpen, setAddFundsModalOpen] = useState(false)
   const [sendModalOpen, setSendModalOpen] = useState(false)
   const [showUsernameSetup, setShowUsernameSetup] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
+  const [showNetworkSelector, setShowNetworkSelector] = useState(false)
+  const [selectedNetwork, setSelectedNetwork] = useState("ethereum")
   const { toast } = useToast()
 
   useEffect(() => {
@@ -119,6 +124,50 @@ function CryptoExchangeApp() {
         currentUser={user} 
         onComplete={() => setShowUsernameSetup(false)} 
       />
+    )
+  }
+
+  if (showSettings) {
+    return (
+      <div className="max-w-md mx-auto min-h-screen app-background">
+        <div className="p-4">
+          <SettingsScreen 
+            user={user}
+            onBack={() => setShowSettings(false)}
+            onEditUsername={() => {
+              setShowSettings(false)
+              setShowUsernameSetup(true)
+            }}
+          />
+        </div>
+      </div>
+    )
+  }
+
+  if (showNetworkSelector) {
+    return (
+      <div className="max-w-md mx-auto min-h-screen app-background">
+        <div className="p-4">
+          <div className="flex items-center gap-4 mb-6">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowNetworkSelector(false)}
+              className="h-10 w-10"
+            >
+              ←
+            </Button>
+            <h1 className="text-xl font-bold">Network Settings</h1>
+          </div>
+          <NetworkSelector 
+            currentNetwork={selectedNetwork}
+            onNetworkChange={(network) => {
+              setSelectedNetwork(network)
+              setTimeout(() => setShowNetworkSelector(false), 1000)
+            }}
+          />
+        </div>
+      </div>
     )
   }
 
@@ -215,7 +264,7 @@ function CryptoExchangeApp() {
                 <p className="text-sm text-gray-600 capitalize">{walletData.type}</p>
               </div>
               <div>
-                <p className="text-2xl font-bold text-blue-600 capitalize">{walletData.network}</p>
+                <p className="text-2xl font-bold text-blue-600 capitalize">{selectedNetwork}</p>
                 <p className="text-sm text-gray-600">Network</p>
               </div>
             </div>
@@ -337,7 +386,12 @@ function CryptoExchangeApp() {
           {walletData.isConnected && (
             <div className="text-sm text-purple-200 mb-4">
               <p>Wallet: {walletData.address?.slice(0, 6)}...{walletData.address?.slice(-4)}</p>
-              <p>Network: {walletData.network}</p>
+              <button 
+                onClick={() => setShowNetworkSelector(true)}
+                className="text-purple-200 hover:text-white underline"
+              >
+                Network: {selectedNetwork} ↗
+              </button>
             </div>
           )}
           <div className="flex space-x-3">
@@ -365,7 +419,17 @@ function CryptoExchangeApp() {
       {/* Wallet Holdings */}
       <Card className="border-0 shadow-lg content-overlay">
         <CardHeader>
-          <CardTitle className="text-lg">Your Holdings</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg">Your Holdings</CardTitle>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowNetworkSelector(true)}
+              className="text-purple-600 hover:text-purple-700 text-xs"
+            >
+              Switch Network
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="space-y-3">
           {walletData.isConnected ? (
@@ -423,7 +487,7 @@ function CryptoExchangeApp() {
       <div className="text-center">
         <Avatar className="w-24 h-24 mx-auto mb-4">
           <AvatarImage src={user.photoURL || "/placeholder.svg?height=96&width=96"} />
-          <AvatarFallback className="text-2xl bg-purple-100 text-purple-600">
+          <AvatarFallback className="text-2xl bg-purple-100 text-purple-600 dark:bg-purple-900 dark:text-purple-300">
             {user.displayName?.charAt(0) || user.email?.charAt(0) || "U"}
           </AvatarFallback>
         </Avatar>
@@ -442,48 +506,30 @@ function CryptoExchangeApp() {
         </div>
       </div>
 
+      {/* Main Actions */}
       <Card className="border-0 shadow-lg content-overlay">
         <CardContent className="p-0">
           <div className="space-y-1">
-            <Button variant="ghost" className="w-full justify-start p-4 h-auto">
-              <Settings className="w-5 h-5 mr-3 text-gray-600" />
+            <Button 
+              variant="ghost" 
+              className="w-full justify-start p-4 h-auto"
+              onClick={() => setShowSettings(true)}
+            >
+              <Settings className="w-5 h-5 mr-3 text-gray-600 dark:text-gray-400" />
               <div className="text-left">
-                <p className="font-medium">Account Settings</p>
-                <p className="text-sm text-gray-600">Manage your account preferences</p>
-              </div>
-            </Button>
-
-            <Button variant="ghost" className="w-full justify-start p-4 h-auto">
-              <Shield className="w-5 h-5 mr-3 text-gray-600" />
-              <div className="text-left">
-                <p className="font-medium">Security</p>
-                <p className="text-sm text-gray-600">Two-factor authentication, passwords</p>
-              </div>
-            </Button>
-
-            <Button variant="ghost" className="w-full justify-start p-4 h-auto">
-              <Bell className="w-5 h-5 mr-3 text-gray-600" />
-              <div className="text-left">
-                <p className="font-medium">Notifications</p>
-                <p className="text-sm text-gray-600">Push notifications, email alerts</p>
-              </div>
-            </Button>
-
-            <Button variant="ghost" className="w-full justify-start p-4 h-auto">
-              <HelpCircle className="w-5 h-5 mr-3 text-gray-600" />
-              <div className="text-left">
-                <p className="font-medium">Help & Support</p>
-                <p className="text-sm text-gray-600">Get help and contact support</p>
+                <p className="font-medium">Settings</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Account, security, and preferences</p>
               </div>
             </Button>
           </div>
         </CardContent>
       </Card>
 
+      {/* Wallet Actions */}
       {walletData.isConnected && (
         <Button
           variant="outline"
-          className="w-full text-orange-600 border-orange-200 hover:bg-orange-50 bg-transparent mb-3"
+          className="w-full text-orange-600 border-orange-200 hover:bg-orange-50 dark:hover:bg-orange-900/20 bg-transparent mb-3"
           onClick={disconnectWallet}
         >
           <Wallet className="w-5 h-5 mr-2" />
@@ -491,9 +537,10 @@ function CryptoExchangeApp() {
         </Button>
       )}
 
+      {/* Sign Out */}
       <Button
         variant="outline"
-        className="w-full text-red-600 border-red-200 hover:bg-red-50 bg-transparent"
+        className="w-full text-red-600 border-red-200 hover:bg-red-50 dark:hover:bg-red-900/20 bg-transparent"
         onClick={handleLogout}
       >
         <LogOut className="w-5 h-5 mr-2" />
