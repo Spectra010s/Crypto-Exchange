@@ -17,6 +17,7 @@ import {
   Bell,
   Shield,
   HelpCircle,
+  ExternalLink,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -26,6 +27,11 @@ import { AuthForm } from "@/components/auth/auth-form"
 import { AuthProvider, useAuth } from "@/hooks/use-auth"
 import { fetchCryptocurrencies, type CoinData } from "@/lib/coinmarketcap"
 import { useToast } from "@/hooks/use-toast"
+import { useWalletContext } from "@/hooks/use-wallet"
+import { WalletConnectModal } from "@/components/wallet/wallet-connect-modal"
+import { AddFundsModal } from "@/components/wallet/add-funds-modal"
+import { SendTransactionModal } from "@/components/wallet/send-transaction-modal"
+import { BINANCE_BUY_URL, BINANCE_SELL_URL } from "@/lib/web3-config"
 
 // Mock transactions data
 const transactions = [
@@ -37,10 +43,14 @@ const transactions = [
 
 function CryptoExchangeApp() {
   const { user, loading, logout } = useAuth()
+  const { walletData, disconnectWallet, refreshBalances } = useWalletContext()
   const [activeTab, setActiveTab] = useState("home")
   const [balanceVisible, setBalanceVisible] = useState(true)
   const [marketData, setMarketData] = useState<CoinData[]>([])
   const [loadingMarketData, setLoadingMarketData] = useState(true)
+  const [walletModalOpen, setWalletModalOpen] = useState(false)
+  const [addFundsModalOpen, setAddFundsModalOpen] = useState(false)
+  const [sendModalOpen, setSendModalOpen] = useState(false)
   const { toast } = useToast()
 
   useEffect(() => {
@@ -98,38 +108,69 @@ function CryptoExchangeApp() {
       {/* Welcome Section */}
       <div className="bg-gradient-to-r from-purple-600 to-purple-700 rounded-3xl p-6 text-white">
         <h1 className="text-2xl font-bold mb-2">Welcome back, {user.displayName || user.email?.split("@")[0]}!</h1>
-        <p className="text-purple-100 mb-4">Ready to trade today?</p>
+        <p className="text-purple-100 mb-4">
+          {walletData.isConnected ? 'Your Web3 portfolio is ready!' : 'Connect your wallet to start trading!'}
+        </p>
         <div className="flex items-center justify-between">
           <div>
             <p className="text-purple-200 text-sm">Portfolio Value</p>
-            <p className="text-3xl font-bold">$24,567.89</p>
+            <p className="text-3xl font-bold">
+              {walletData.isConnected ? (
+                balanceVisible ? `$${walletData.totalValue.toFixed(2)}` : "••••••••"
+              ) : (
+                "Connect Wallet"
+              )}
+            </p>
           </div>
           <div className="text-right">
-            <p className="text-purple-200 text-sm">24h Change</p>
-            <p className="text-xl font-semibold text-green-300">+$1,234.56</p>
+            <p className="text-purple-200 text-sm">Wallet Status</p>
+            <p className="text-xl font-semibold">
+              {walletData.isConnected ? (
+                <span className="text-green-300">✓ Connected</span>
+              ) : (
+                <Button 
+                  size="sm" 
+                  variant="secondary" 
+                  onClick={() => setWalletModalOpen(true)}
+                  className="text-purple-600"
+                >
+                  Connect Wallet
+                </Button>
+              )}
+            </p>
           </div>
         </div>
       </div>
 
       {/* Quick Actions */}
       <div className="grid grid-cols-2 gap-4">
-        <Card className="border-0 shadow-lg bg-gradient-to-br from-green-50 to-green-100">
-          <CardContent className="p-6 text-center">
+        <Card className="border-0 shadow-lg bg-gradient-to-br from-green-50 to-green-100 cursor-pointer hover:shadow-xl transition-shadow">
+          <CardContent 
+            className="p-6 text-center"
+            onClick={() => window.open(BINANCE_BUY_URL, '_blank')}
+          >
             <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-3">
               <ArrowDownLeft className="w-6 h-6 text-white" />
             </div>
             <h3 className="font-semibold text-green-800">Buy Crypto</h3>
-            <p className="text-sm text-green-600 mt-1">Start investing</p>
+            <p className="text-sm text-green-600 mt-1 flex items-center justify-center gap-1">
+              Via Binance <ExternalLink className="w-3 h-3" />
+            </p>
           </CardContent>
         </Card>
 
-        <Card className="border-0 shadow-lg bg-gradient-to-br from-red-50 to-red-100">
-          <CardContent className="p-6 text-center">
+        <Card className="border-0 shadow-lg bg-gradient-to-br from-red-50 to-red-100 cursor-pointer hover:shadow-xl transition-shadow">
+          <CardContent 
+            className="p-6 text-center"
+            onClick={() => window.open(BINANCE_SELL_URL, '_blank')}
+          >
             <div className="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center mx-auto mb-3">
               <ArrowUpRight className="w-6 h-6 text-white" />
             </div>
             <h3 className="font-semibold text-red-800">Sell Crypto</h3>
-            <p className="text-sm text-red-600 mt-1">Take profits</p>
+            <p className="text-sm text-red-600 mt-1 flex items-center justify-center gap-1">
+              Via Binance <ExternalLink className="w-3 h-3" />
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -137,23 +178,35 @@ function CryptoExchangeApp() {
       {/* Quick Stats */}
       <Card className="border-0 shadow-lg">
         <CardHeader>
-          <CardTitle className="text-lg">Market Overview</CardTitle>
+          <CardTitle className="text-lg">Wallet Overview</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-3 gap-4 text-center">
-            <div>
-              <p className="text-2xl font-bold text-green-600">+5.2%</p>
-              <p className="text-sm text-gray-600">24h Gain</p>
+          {walletData.isConnected ? (
+            <div className="grid grid-cols-3 gap-4 text-center">
+              <div>
+                <p className="text-2xl font-bold text-purple-600">{walletData.balances.length}</p>
+                <p className="text-sm text-gray-600">Holdings</p>
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-green-600">
+                  {walletData.type === 'ethereum' ? '🌐' : '☀️'}
+                </p>
+                <p className="text-sm text-gray-600 capitalize">{walletData.type}</p>
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-blue-600 capitalize">{walletData.network}</p>
+                <p className="text-sm text-gray-600">Network</p>
+              </div>
             </div>
-            <div>
-              <p className="text-2xl font-bold text-purple-600">12</p>
-              <p className="text-sm text-gray-600">Holdings</p>
+          ) : (
+            <div className="text-center py-4">
+              <p className="text-gray-500 mb-4">Connect your wallet to see your portfolio</p>
+              <Button onClick={() => setWalletModalOpen(true)}>
+                <Wallet className="w-4 h-4 mr-2" />
+                Connect Wallet
+              </Button>
             </div>
-            <div>
-              <p className="text-2xl font-bold text-blue-600">$2.1K</p>
-              <p className="text-sm text-gray-600">Available</p>
-            </div>
-          </div>
+          )}
         </CardContent>
       </Card>
     </div>
@@ -240,16 +293,46 @@ function CryptoExchangeApp() {
       {/* Balance Card */}
       <Card className="border-0 shadow-lg bg-gradient-to-r from-purple-600 to-purple-700 text-white">
         <CardContent className="p-6">
-          <p className="text-purple-200 mb-2">Total Balance</p>
-          <p className="text-4xl font-bold mb-4">{balanceVisible ? "$24,567.89" : "••••••••"}</p>
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-purple-200">Total Balance</p>
+            {walletData.isConnected && (
+              <Button 
+                size="sm" 
+                variant="ghost" 
+                onClick={refreshBalances}
+                className="text-purple-200 hover:text-white hover:bg-purple-500"
+              >
+                🔄 Refresh
+              </Button>
+            )}
+          </div>
+          <p className="text-4xl font-bold mb-4">
+            {walletData.isConnected ? (
+              balanceVisible ? `$${walletData.totalValue.toFixed(2)}` : "••••••••"
+            ) : (
+              "Connect Wallet"
+            )}
+          </p>
+          {walletData.isConnected && (
+            <div className="text-sm text-purple-200 mb-4">
+              <p>Wallet: {walletData.address?.slice(0, 6)}...{walletData.address?.slice(-4)}</p>
+              <p>Network: {walletData.network}</p>
+            </div>
+          )}
           <div className="flex space-x-3">
-            <Button className="flex-1 bg-white text-purple-600 hover:bg-gray-100">
+            <Button 
+              className="flex-1 bg-white text-purple-600 hover:bg-gray-100"
+              onClick={() => setAddFundsModalOpen(true)}
+              disabled={!walletData.isConnected}
+            >
               <Plus className="w-4 h-4 mr-2" />
               Add Funds
             </Button>
             <Button
               variant="outline"
               className="flex-1 border-white text-white hover:bg-white hover:text-purple-600 bg-transparent"
+              onClick={() => setSendModalOpen(true)}
+              disabled={!walletData.isConnected}
             >
               <Send className="w-4 h-4 mr-2" />
               Send
@@ -258,47 +341,57 @@ function CryptoExchangeApp() {
         </CardContent>
       </Card>
 
-      {/* Recent Transactions */}
+      {/* Wallet Holdings */}
       <Card className="border-0 shadow-lg">
         <CardHeader>
-          <CardTitle className="text-lg">Recent Transactions</CardTitle>
+          <CardTitle className="text-lg">Your Holdings</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          {transactions.map((tx) => (
-            <div key={tx.id} className="flex items-center justify-between p-3 rounded-xl bg-gray-50">
-              <div className="flex items-center space-x-3">
-                <div
-                  className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                    tx.type === "buy" ? "bg-green-100" : tx.type === "sell" ? "bg-red-100" : "bg-blue-100"
-                  }`}
+          {walletData.isConnected ? (
+            walletData.balances.length > 0 ? (
+              walletData.balances.map((balance) => (
+                <div key={balance.symbol} className="flex items-center justify-between p-3 rounded-xl bg-gray-50">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center bg-purple-100">
+                      <span className="text-xl">
+                        {balance.symbol === 'ETH' ? '🌐' : 
+                         balance.symbol === 'SOL' ? '☀️' : 
+                         balance.symbol === 'MATIC' ? '🟣' : 
+                         balance.symbol === 'ARB' ? '🔵' : 
+                         balance.symbol === 'OP' ? '🔴' : '💎'}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="font-semibold">{balance.symbol}</p>
+                      <p className="text-sm text-gray-600">{balance.name}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-semibold">{balance.balance.toFixed(6)} {balance.symbol}</p>
+                    <p className="text-sm text-gray-600">${balance.value.toFixed(2)}</p>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-gray-500 mb-4">No tokens found</p>
+                <Button 
+                  onClick={() => setAddFundsModalOpen(true)}
+                  size="sm"
                 >
-                  {tx.type === "buy" ? (
-                    <ArrowDownLeft
-                      className={`w-5 h-5 ${
-                        tx.type === "buy" ? "text-green-600" : tx.type === "sell" ? "text-red-600" : "text-blue-600"
-                      }`}
-                    />
-                  ) : tx.type === "sell" ? (
-                    <ArrowUpRight className="w-5 h-5 text-red-600" />
-                  ) : (
-                    <Send className="w-5 h-5 text-blue-600" />
-                  )}
-                </div>
-                <div>
-                  <p className="font-semibold capitalize">
-                    {tx.type} {tx.coin}
-                  </p>
-                  <p className="text-sm text-gray-600">{tx.date}</p>
-                </div>
+                  Add Funds
+                </Button>
               </div>
-              <div className="text-right">
-                <p className="font-semibold">
-                  {tx.amount} {tx.coin}
-                </p>
-                <p className="text-sm text-gray-600">${tx.value.toLocaleString()}</p>
-              </div>
+            )
+          ) : (
+            <div className="text-center py-8">
+              <Wallet className="w-16 h-16 mx-auto text-gray-400 mb-4" />
+              <p className="text-gray-500 mb-4">Connect your wallet to see holdings</p>
+              <Button onClick={() => setWalletModalOpen(true)}>
+                Connect Wallet
+              </Button>
             </div>
-          ))}
+          )}
         </CardContent>
       </Card>
     </div>
@@ -355,6 +448,17 @@ function CryptoExchangeApp() {
           </div>
         </CardContent>
       </Card>
+
+      {walletData.isConnected && (
+        <Button
+          variant="outline"
+          className="w-full text-orange-600 border-orange-200 hover:bg-orange-50 bg-transparent mb-3"
+          onClick={disconnectWallet}
+        >
+          <Wallet className="w-5 h-5 mr-2" />
+          Disconnect Wallet
+        </Button>
+      )}
 
       <Button
         variant="outline"
@@ -414,6 +518,20 @@ function CryptoExchangeApp() {
           ))}
         </div>
       </div>
+
+      {/* Modals */}
+      <WalletConnectModal
+        isOpen={walletModalOpen}
+        onClose={() => setWalletModalOpen(false)}
+      />
+      <AddFundsModal
+        isOpen={addFundsModalOpen}
+        onClose={() => setAddFundsModalOpen(false)}
+      />
+      <SendTransactionModal
+        isOpen={sendModalOpen}
+        onClose={() => setSendModalOpen(false)}
+      />
     </div>
   )
 }
