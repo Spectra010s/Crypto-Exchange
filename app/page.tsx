@@ -18,11 +18,15 @@ import {
   Shield,
   HelpCircle,
   ExternalLink,
+  Edit,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { AuthForm } from "@/components/auth/auth-form"
 import { AuthProvider, useAuth } from "@/hooks/use-auth"
 import { fetchCryptocurrencies, type CoinData } from "@/lib/coingecko"
@@ -43,7 +47,7 @@ const transactions = [
 ]
 
 function CryptoExchangeApp() {
-  const { user, loading, logout } = useAuth()
+  const { user, loading, logout, updateProfile } = useAuth()
   const { walletData, disconnectWallet, refreshBalances } = useWalletContext()
   const [activeTab, setActiveTab] = useState("home")
   const [balanceVisible, setBalanceVisible] = useState(true)
@@ -52,6 +56,8 @@ function CryptoExchangeApp() {
   const [walletModalOpen, setWalletModalOpen] = useState(false)
   const [addFundsModalOpen, setAddFundsModalOpen] = useState(false)
   const [sendModalOpen, setSendModalOpen] = useState(false)
+  const [editingUsername, setEditingUsername] = useState(false)
+  const [newUsername, setNewUsername] = useState("")
   const { toast } = useToast()
 
   useEffect(() => {
@@ -73,6 +79,7 @@ function CryptoExchangeApp() {
 
     if (user) {
       loadMarketData()
+      setNewUsername(user.displayName || "")
     }
   }, [user, toast])
 
@@ -92,117 +99,157 @@ function CryptoExchangeApp() {
     }
   }
 
+  const handleUsernameUpdate = async () => {
+    if (!newUsername.trim()) {
+      toast({
+        title: "Error",
+        description: "Username cannot be empty",
+        variant: "destructive",
+      })
+      return
+    }
+
+    try {
+      await updateProfile({ displayName: newUsername.trim() })
+      setEditingUsername(false)
+      toast({
+        title: "Success",
+        description: "Username updated successfully",
+      })
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update username",
+        variant: "destructive",
+      })
+    }
+  }
+
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-purple-600"></div>
+      <div className="h-full full-viewport flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
       </div>
     )
   }
 
   if (!user) {
-    return <AuthForm onAuthSuccess={() => {}} />
+    return (
+      <div className="h-full full-viewport">
+        <AuthForm onAuthSuccess={() => {}} />
+      </div>
+    )
   }
 
   const HomeScreen = () => (
-    <div className="space-y-6">
-      {/* Welcome Section */}
-      <div className="bg-gradient-to-r from-purple-600 to-purple-700 rounded-3xl p-6 text-white">
-        <h1 className="text-2xl font-bold mb-2">Welcome back, {user.displayName || user.email?.split("@")[0]}!</h1>
-        <p className="text-purple-100 mb-4">
-          {walletData.isConnected ? 'Your Web3 portfolio is ready!' : 'Connect your wallet to start trading!'}
-        </p>
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-purple-200 text-sm">Portfolio Value</p>
-            <p className="text-3xl font-bold">
-              {walletData.isConnected ? (
-                balanceVisible ? `$${walletData.totalValue.toFixed(2)}` : "••••••••"
-              ) : (
-                "Connect Wallet"
-              )}
-            </p>
+    <div className="space-y-4 sm:space-y-6 animate-fade-in">
+      {/* Welcome Section - Mobile-First */}
+      <Card className="mobile-card gradient-purple text-white shadow-lg">
+        <CardContent className="mobile-container">
+          <div className="space-y-4">
+            <div>
+              <h1 className="text-xl sm:text-2xl font-bold">
+                Welcome back, {user.displayName || user.email?.split("@")[0]}!
+              </h1>
+              <p className="text-purple-100 text-sm sm:text-base mt-2">
+                {walletData.isConnected ? 'Your Web3 portfolio is ready!' : 'Connect your wallet to start trading!'}
+              </p>
+            </div>
+            
+            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+              <div className="flex-1">
+                <p className="text-purple-200 text-xs sm:text-sm">Portfolio Value</p>
+                <p className="text-2xl sm:text-3xl font-bold mt-1">
+                  {walletData.isConnected ? (
+                    balanceVisible ? `$${walletData.totalValue.toFixed(2)}` : "••••••••"
+                  ) : (
+                    "Connect Wallet"
+                  )}
+                </p>
+              </div>
+              
+              <div className="text-left sm:text-right">
+                <p className="text-purple-200 text-xs sm:text-sm">Wallet Status</p>
+                <div className="mt-1">
+                  {walletData.isConnected ? (
+                    <span className="text-green-300 text-sm sm:text-xl font-semibold">✓ Connected</span>
+                  ) : (
+                    <Button 
+                      size="sm" 
+                      variant="secondary" 
+                      onClick={() => setWalletModalOpen(true)}
+                      className="text-purple-600 touch-target"
+                    >
+                      Connect Wallet
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
-          <div className="text-right">
-            <p className="text-purple-200 text-sm">Wallet Status</p>
-            <p className="text-xl font-semibold">
-              {walletData.isConnected ? (
-                <span className="text-green-300">✓ Connected</span>
-              ) : (
-                <Button 
-                  size="sm" 
-                  variant="secondary" 
-                  onClick={() => setWalletModalOpen(true)}
-                  className="text-purple-600"
-                >
-                  Connect Wallet
-                </Button>
-              )}
-            </p>
-          </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
-      {/* Quick Actions */}
-      <div className="grid grid-cols-2 gap-4">
-        <Card className="border-0 shadow-lg bg-gradient-to-br from-green-50 to-green-100 cursor-pointer hover:shadow-xl transition-shadow">
+      {/* Quick Actions - Mobile-First Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+        <Card className="mobile-card hover:shadow-lg transition-all duration-300 cursor-pointer group">
           <CardContent 
-            className="p-6 text-center"
+            className="mobile-container text-center"
             onClick={() => window.open(BINANCE_BUY_URL, '_blank')}
           >
-            <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-3">
-              <ArrowDownLeft className="w-6 h-6 text-white" />
+            <div className="w-12 h-12 sm:w-14 sm:h-14 gradient-green rounded-full flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
+              <ArrowDownLeft className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
             </div>
-            <h3 className="font-semibold text-green-800">Buy Crypto</h3>
-            <p className="text-sm text-green-600 mt-1 flex items-center justify-center gap-1">
+            <h3 className="font-semibold text-green-800 text-sm sm:text-base">Buy Crypto</h3>
+            <p className="text-xs sm:text-sm text-green-600 mt-1 flex items-center justify-center gap-1">
               Via Binance <ExternalLink className="w-3 h-3" />
             </p>
           </CardContent>
         </Card>
 
-        <Card className="border-0 shadow-lg bg-gradient-to-br from-red-50 to-red-100 cursor-pointer hover:shadow-xl transition-shadow">
+        <Card className="mobile-card hover:shadow-lg transition-all duration-300 cursor-pointer group">
           <CardContent 
-            className="p-6 text-center"
+            className="mobile-container text-center"
             onClick={() => window.open(BINANCE_SELL_URL, '_blank')}
           >
-            <div className="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center mx-auto mb-3">
-              <ArrowUpRight className="w-6 h-6 text-white" />
+            <div className="w-12 h-12 sm:w-14 sm:h-14 gradient-red rounded-full flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
+              <ArrowUpRight className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
             </div>
-            <h3 className="font-semibold text-red-800">Sell Crypto</h3>
-            <p className="text-sm text-red-600 mt-1 flex items-center justify-center gap-1">
+            <h3 className="font-semibold text-red-800 text-sm sm:text-base">Sell Crypto</h3>
+            <p className="text-xs sm:text-sm text-red-600 mt-1 flex items-center justify-center gap-1">
               Via Binance <ExternalLink className="w-3 h-3" />
             </p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Quick Stats */}
-      <Card className="border-0 shadow-lg">
-        <CardHeader>
-          <CardTitle className="text-lg">Wallet Overview</CardTitle>
+      {/* Wallet Overview - Mobile-Optimized */}
+      <Card className="mobile-card shadow-lg">
+        <CardHeader className="mobile-container pb-2">
+          <CardTitle className="text-base sm:text-lg">Wallet Overview</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="mobile-container pt-0">
           {walletData.isConnected ? (
-            <div className="grid grid-cols-3 gap-4 text-center">
+            <div className="grid grid-cols-3 gap-3 sm:gap-4 text-center">
               <div>
-                <p className="text-2xl font-bold text-purple-600">{walletData.balances.length}</p>
-                <p className="text-sm text-gray-600">Holdings</p>
+                <p className="text-xl sm:text-2xl font-bold text-purple-600">{walletData.balances.length}</p>
+                <p className="text-xs sm:text-sm text-gray-600 mt-1">Holdings</p>
               </div>
               <div>
-                <p className="text-2xl font-bold text-green-600">
+                <p className="text-xl sm:text-2xl font-bold text-green-600">
                   {walletData.type === 'ethereum' ? '🌐' : '☀️'}
                 </p>
-                <p className="text-sm text-gray-600 capitalize">{walletData.type}</p>
+                <p className="text-xs sm:text-sm text-gray-600 mt-1 capitalize">{walletData.type}</p>
               </div>
               <div>
-                <p className="text-2xl font-bold text-blue-600 capitalize">{walletData.network}</p>
-                <p className="text-sm text-gray-600">Network</p>
+                <p className="text-xl sm:text-2xl font-bold text-blue-600 capitalize">{walletData.network}</p>
+                <p className="text-xs sm:text-sm text-gray-600 mt-1">Network</p>
               </div>
             </div>
           ) : (
-            <div className="text-center py-4">
-              <p className="text-gray-500 mb-4">Connect your wallet to see your portfolio</p>
-              <Button onClick={() => setWalletModalOpen(true)}>
+            <div className="text-center py-4 sm:py-6">
+              <p className="text-gray-500 mb-4 text-sm sm:text-base">Connect your wallet to see your portfolio</p>
+              <Button onClick={() => setWalletModalOpen(true)} className="touch-target">
                 <Wallet className="w-4 h-4 mr-2" />
                 Connect Wallet
               </Button>
@@ -214,30 +261,30 @@ function CryptoExchangeApp() {
   )
 
   const MarketScreen = () => (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Markets</h1>
-        <Badge variant="secondary" className="bg-purple-100 text-purple-700">
+    <div className="space-y-4 sm:space-y-6 animate-fade-in">
+      <div className="flex items-center justify-between mobile-container">
+        <h1 className="text-xl sm:text-2xl font-bold">Markets</h1>
+        <Badge variant="secondary" className="bg-purple-100 text-purple-700 text-xs sm:text-sm">
           Live
         </Badge>
       </div>
 
       {loadingMarketData ? (
-        <div className="space-y-3">
+        <div className="space-y-3 mobile-container">
           {[...Array(5)].map((_, i) => (
-            <Card key={i} className="border-0 shadow-lg">
-              <CardContent className="p-4">
+            <Card key={i} className="mobile-card">
+              <CardContent className="p-3 sm:p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <div className="w-12 h-12 bg-gray-200 rounded-full animate-pulse"></div>
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-200 rounded-full animate-pulse"></div>
                     <div className="space-y-2">
-                      <div className="h-4 bg-gray-200 rounded animate-pulse w-16"></div>
-                      <div className="h-3 bg-gray-200 rounded animate-pulse w-20"></div>
+                      <div className="h-3 sm:h-4 bg-gray-200 rounded animate-pulse w-12 sm:w-16"></div>
+                      <div className="h-2 sm:h-3 bg-gray-200 rounded animate-pulse w-16 sm:w-20"></div>
                     </div>
                   </div>
                   <div className="text-right space-y-2">
-                    <div className="h-4 bg-gray-200 rounded animate-pulse w-20"></div>
-                    <div className="h-3 bg-gray-200 rounded animate-pulse w-12"></div>
+                    <div className="h-3 sm:h-4 bg-gray-200 rounded animate-pulse w-16 sm:w-20"></div>
+                    <div className="h-2 sm:h-3 bg-gray-200 rounded animate-pulse w-10 sm:w-12"></div>
                   </div>
                 </div>
               </CardContent>
@@ -245,28 +292,28 @@ function CryptoExchangeApp() {
           ))}
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-3 mobile-container">
           {marketData.map((coin) => (
-            <Card key={coin.id} className="border-0 shadow-lg hover:shadow-xl transition-all duration-300">
-              <CardContent className="p-4">
+            <Card key={coin.id} className="mobile-card hover:shadow-lg transition-all duration-300 animate-slide-up">
+              <CardContent className="p-3 sm:p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center overflow-hidden">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-purple-100 rounded-full flex items-center justify-center overflow-hidden">
                       {coin.image ? (
-                        <img src={coin.image} alt={coin.symbol} className="w-10 h-10 rounded-full" />
+                        <img src={coin.image} alt={coin.symbol} className="w-8 h-8 sm:w-10 sm:h-10 rounded-full" />
                       ) : (
-                        <span className="text-xl font-bold text-purple-600">{coin.symbol.charAt(0).toUpperCase()}</span>
+                        <span className="text-lg sm:text-xl font-bold text-purple-600">{coin.symbol.charAt(0).toUpperCase()}</span>
                       )}
                     </div>
                     <div>
-                      <h3 className="font-semibold">{coin.symbol.toUpperCase()}</h3>
-                      <p className="text-sm text-gray-600">{coin.name}</p>
+                      <h3 className="font-semibold text-sm sm:text-base">{coin.symbol.toUpperCase()}</h3>
+                      <p className="text-xs sm:text-sm text-gray-600">{coin.name}</p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="font-semibold">${coin.current_price.toLocaleString()}</p>
+                    <p className="font-semibold text-sm sm:text-base">${coin.current_price.toLocaleString()}</p>
                     <p
-                      className={`text-sm ${coin.price_change_percentage_24h >= 0 ? "text-green-600" : "text-red-600"}`}
+                      className={`text-xs sm:text-sm ${coin.price_change_percentage_24h >= 0 ? "text-green-600" : "text-red-600"}`}
                     >
                       {coin.price_change_percentage_24h >= 0 ? "+" : ""}
                       {coin.price_change_percentage_24h.toFixed(2)}%
@@ -282,189 +329,242 @@ function CryptoExchangeApp() {
   )
 
   const WalletScreen = () => (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Wallet</h1>
+    <div className="space-y-4 sm:space-y-6 animate-fade-in">
+      <div className="flex items-center justify-between mobile-container">
+        <h1 className="text-xl sm:text-2xl font-bold">Wallet</h1>
         <Button
           variant="ghost"
           size="icon"
           onClick={() => setBalanceVisible(!balanceVisible)}
-          className="text-gray-600"
+          className="text-gray-600 touch-target"
         >
           {balanceVisible ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
         </Button>
       </div>
 
-      {/* Balance Card */}
-      <Card className="border-0 shadow-lg bg-gradient-to-r from-purple-600 to-purple-700 text-white">
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-purple-200">Total Balance</p>
-            {walletData.isConnected && (
-              <Button 
-                size="sm" 
-                variant="ghost" 
-                onClick={refreshBalances}
-                className="text-purple-200 hover:text-white hover:bg-purple-500"
-              >
-                🔄 Refresh
-              </Button>
-            )}
-          </div>
-          <p className="text-4xl font-bold mb-4">
-            {walletData.isConnected ? (
-              balanceVisible ? `$${walletData.totalValue.toFixed(2)}` : "••••••••"
-            ) : (
-              "Connect Wallet"
-            )}
-          </p>
-          {walletData.isConnected && (
-            <div className="text-sm text-purple-200 mb-4">
-              <p>Wallet: {walletData.address?.slice(0, 6)}...{walletData.address?.slice(-4)}</p>
-              <p>Network: {walletData.network}</p>
-            </div>
-          )}
-          <div className="flex space-x-3">
-            <Button 
-              className="flex-1 bg-white text-purple-600 hover:bg-gray-100"
-              onClick={() => setAddFundsModalOpen(true)}
-              disabled={!walletData.isConnected}
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Add Funds
-            </Button>
-            <Button
-              variant="outline"
-              className="flex-1 border-white text-white hover:bg-white hover:text-purple-600 bg-transparent"
-              onClick={() => setSendModalOpen(true)}
-              disabled={!walletData.isConnected}
-            >
-              <Send className="w-4 h-4 mr-2" />
-              Send
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Wallet Holdings */}
-      <Card className="border-0 shadow-lg">
-        <CardHeader>
-          <CardTitle className="text-lg">Your Holdings</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {walletData.isConnected ? (
-            walletData.balances.length > 0 ? (
-              walletData.balances.map((balance) => (
-                <div key={balance.symbol} className="flex items-center justify-between p-3 rounded-xl bg-gray-50">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center bg-purple-100">
-                      {balance.image ? (
-                        <img src={balance.image} alt={balance.symbol} className="w-8 h-8 rounded-full" />
-                      ) : (
-                        <span className="text-xl">
-                          {balance.symbol === 'ETH' ? '🌐' : 
-                           balance.symbol === 'SOL' ? '☀️' : 
-                           balance.symbol === 'MATIC' ? '🟣' : 
-                           balance.symbol === 'ARB' ? '🔵' : 
-                           balance.symbol === 'OP' ? '🔴' : '💎'}
-                        </span>
-                      )}
-                    </div>
-                    <div>
-                      <p className="font-semibold">{balance.symbol}</p>
-                      <p className="text-sm text-gray-600">{balance.name}</p>
-                      <div className="flex items-center gap-1 text-xs">
-                        <span className={balance.gainLossPercentage >= 0 ? "text-green-600" : "text-red-600"}>
-                          {balance.gainLossPercentage >= 0 ? "+" : ""}{balance.gainLossPercentage.toFixed(2)}%
-                        </span>
-                        <span className="text-gray-500">
-                          ({balance.gainLoss >= 0 ? "+" : ""}${balance.gainLoss.toFixed(2)})
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-semibold">{balance.balance.toFixed(6)} {balance.symbol}</p>
-                    <p className="text-sm text-gray-600">${balance.value.toFixed(2)}</p>
-                    <p className="text-xs text-gray-500">${balance.currentPrice.toFixed(2)} each</p>
-                  </div>
+      {/* Balance Card - Mobile-Optimized */}
+      <div className="mobile-container">
+        <Card className="mobile-card gradient-purple text-white shadow-lg">
+          <CardContent className="mobile-container">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <p className="text-purple-200 text-sm">Total Balance</p>
+                {walletData.isConnected && (
+                  <Button 
+                    size="sm" 
+                    variant="ghost" 
+                    onClick={refreshBalances}
+                    className="text-purple-200 hover:text-white hover:bg-purple-500 text-xs touch-target"
+                  >
+                    🔄 Refresh
+                  </Button>
+                )}
+              </div>
+              
+              <p className="text-3xl sm:text-4xl font-bold">
+                {walletData.isConnected ? (
+                  balanceVisible ? `$${walletData.totalValue.toFixed(2)}` : "••••••••"
+                ) : (
+                  "Connect Wallet"
+                )}
+              </p>
+              
+              {walletData.isConnected && (
+                <div className="text-xs sm:text-sm text-purple-200 space-y-1">
+                  <p>Wallet: {walletData.address?.slice(0, 6)}...{walletData.address?.slice(-4)}</p>
+                  <p>Network: {walletData.network}</p>
                 </div>
-              ))
-            ) : (
-              <div className="text-center py-8">
-                <p className="text-gray-500 mb-4">No tokens found</p>
+              )}
+              
+              <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
                 <Button 
+                  className="flex-1 bg-white text-purple-600 hover:bg-gray-100 touch-target"
                   onClick={() => setAddFundsModalOpen(true)}
-                  size="sm"
+                  disabled={!walletData.isConnected}
                 >
+                  <Plus className="w-4 h-4 mr-2" />
                   Add Funds
                 </Button>
+                <Button
+                  variant="outline"
+                  className="flex-1 border-white text-white hover:bg-white hover:text-purple-600 bg-transparent touch-target"
+                  onClick={() => setSendModalOpen(true)}
+                  disabled={!walletData.isConnected}
+                >
+                  <Send className="w-4 h-4 mr-2" />
+                  Send
+                </Button>
               </div>
-            )
-          ) : (
-            <div className="text-center py-8">
-              <Wallet className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-              <p className="text-gray-500 mb-4">Connect your wallet to see holdings</p>
-              <Button onClick={() => setWalletModalOpen(true)}>
-                Connect Wallet
-              </Button>
             </div>
-          )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Holdings - Mobile-Optimized */}
+      <div className="mobile-container">
+        <Card className="mobile-card shadow-lg">
+          <CardHeader className="mobile-container pb-2">
+            <CardTitle className="text-base sm:text-lg">Your Holdings</CardTitle>
+          </CardHeader>
+          <CardContent className="mobile-container pt-0 space-y-3">
+            {walletData.isConnected ? (
+              walletData.balances.length > 0 ? (
+                walletData.balances.map((balance) => (
+                  <div key={balance.symbol} className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-gray-800 animate-slide-up">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center bg-purple-100">
+                        {balance.image ? (
+                          <img src={balance.image} alt={balance.symbol} className="w-6 h-6 sm:w-8 sm:h-8 rounded-full" />
+                        ) : (
+                          <span className="text-sm sm:text-xl">
+                            {balance.symbol === 'ETH' ? '🌐' : 
+                             balance.symbol === 'SOL' ? '☀️' : 
+                             balance.symbol === 'MATIC' ? '🟣' : 
+                             balance.symbol === 'ARB' ? '🔵' : 
+                             balance.symbol === 'OP' ? '🔴' : '💎'}
+                          </span>
+                        )}
+                      </div>
+                      <div>
+                        <p className="font-semibold text-sm sm:text-base">{balance.symbol}</p>
+                        <p className="text-xs sm:text-sm text-gray-600">{balance.name}</p>
+                        <div className="flex items-center gap-1 text-xs">
+                          <span className={balance.gainLossPercentage >= 0 ? "text-green-600" : "text-red-600"}>
+                            {balance.gainLossPercentage >= 0 ? "+" : ""}{balance.gainLossPercentage.toFixed(2)}%
+                          </span>
+                          <span className="text-gray-500">
+                            ({balance.gainLoss >= 0 ? "+" : ""}${balance.gainLoss.toFixed(2)})
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-semibold text-xs sm:text-sm">{balance.balance.toFixed(6)} {balance.symbol}</p>
+                      <p className="text-xs sm:text-sm text-gray-600">${balance.value.toFixed(2)}</p>
+                      <p className="text-xs text-gray-500">${balance.currentPrice.toFixed(2)} each</p>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-6 sm:py-8">
+                  <p className="text-gray-500 mb-4 text-sm sm:text-base">No tokens found</p>
+                  <Button 
+                    onClick={() => setAddFundsModalOpen(true)}
+                    size="sm"
+                    className="touch-target"
+                  >
+                    Add Funds
+                  </Button>
+                </div>
+              )
+            ) : (
+              <div className="text-center py-6 sm:py-8">
+                <Wallet className="w-12 h-12 sm:w-16 sm:h-16 mx-auto text-gray-400 mb-4" />
+                <p className="text-gray-500 mb-4 text-sm sm:text-base">Connect your wallet to see holdings</p>
+                <Button onClick={() => setWalletModalOpen(true)} className="touch-target">
+                  Connect Wallet
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 
   const ProfileScreen = () => (
-    <div className="space-y-6">
-      <div className="text-center">
-        <Avatar className="w-24 h-24 mx-auto mb-4">
+    <div className="space-y-4 sm:space-y-6 animate-fade-in mobile-container">
+      <div className="text-center space-y-4">
+        <Avatar className="w-20 h-20 sm:w-24 sm:h-24 mx-auto">
           <AvatarImage src={user.photoURL || "/placeholder.svg?height=96&width=96"} />
-          <AvatarFallback className="text-2xl bg-purple-100 text-purple-600">
+          <AvatarFallback className="text-xl sm:text-2xl bg-purple-100 text-purple-600">
             {user.displayName?.charAt(0) || user.email?.charAt(0) || "U"}
           </AvatarFallback>
         </Avatar>
-        <h1 className="text-2xl font-bold">{user.displayName || "User"}</h1>
-        <p className="text-gray-600">{user.email}</p>
-        <Badge className="mt-2 bg-purple-100 text-purple-700">Verified</Badge>
+        
+        {/* Username with Edit Functionality */}
+        <div className="space-y-2">
+          {editingUsername ? (
+            <div className="space-y-2">
+              <Input 
+                value={newUsername}
+                onChange={(e) => setNewUsername(e.target.value)}
+                placeholder="Enter username"
+                className="text-center text-lg font-bold"
+                maxLength={30}
+              />
+              <div className="flex justify-center gap-2">
+                <Button size="sm" onClick={handleUsernameUpdate} className="touch-target">
+                  Save
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  onClick={() => {
+                    setEditingUsername(false)
+                    setNewUsername(user.displayName || "")
+                  }}
+                  className="touch-target"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center justify-center gap-2">
+              <h1 className="text-xl sm:text-2xl font-bold">{user.displayName || "User"}</h1>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setEditingUsername(true)}
+                className="h-8 w-8 text-gray-500 hover:text-gray-700"
+              >
+                <Edit className="w-4 h-4" />
+              </Button>
+            </div>
+          )}
+        </div>
+        
+        <p className="text-gray-600 text-sm sm:text-base">{user.email}</p>
+        <Badge className="bg-purple-100 text-purple-700">Verified</Badge>
       </div>
 
-      <Card className="border-0 shadow-lg">
+      <Card className="mobile-card shadow-lg">
         <CardContent className="p-0">
           <div className="space-y-1">
             <Button 
               variant="ghost" 
-              className="w-full justify-start p-4 h-auto"
+              className="w-full justify-start p-4 h-auto touch-target"
               onClick={() => setActiveTab("settings")}
             >
               <Settings className="w-5 h-5 mr-3 text-gray-600" />
               <div className="text-left">
-                <p className="font-medium">Account Settings</p>
-                <p className="text-sm text-gray-600">Manage your account preferences</p>
+                <p className="font-medium text-sm sm:text-base">Account Settings</p>
+                <p className="text-xs sm:text-sm text-gray-600">Manage your account preferences</p>
               </div>
             </Button>
 
-            <Button variant="ghost" className="w-full justify-start p-4 h-auto">
+            <Button variant="ghost" className="w-full justify-start p-4 h-auto touch-target">
               <Shield className="w-5 h-5 mr-3 text-gray-600" />
               <div className="text-left">
-                <p className="font-medium">Security</p>
-                <p className="text-sm text-gray-600">Two-factor authentication, passwords</p>
+                <p className="font-medium text-sm sm:text-base">Security</p>
+                <p className="text-xs sm:text-sm text-gray-600">Two-factor authentication, passwords</p>
               </div>
             </Button>
 
-            <Button variant="ghost" className="w-full justify-start p-4 h-auto">
+            <Button variant="ghost" className="w-full justify-start p-4 h-auto touch-target">
               <Bell className="w-5 h-5 mr-3 text-gray-600" />
               <div className="text-left">
-                <p className="font-medium">Notifications</p>
-                <p className="text-sm text-gray-600">Push notifications, email alerts</p>
+                <p className="font-medium text-sm sm:text-base">Notifications</p>
+                <p className="text-xs sm:text-sm text-gray-600">Push notifications, email alerts</p>
               </div>
             </Button>
 
-            <Button variant="ghost" className="w-full justify-start p-4 h-auto">
+            <Button variant="ghost" className="w-full justify-start p-4 h-auto touch-target">
               <HelpCircle className="w-5 h-5 mr-3 text-gray-600" />
               <div className="text-left">
-                <p className="font-medium">Help & Support</p>
-                <p className="text-sm text-gray-600">Get help and contact support</p>
+                <p className="font-medium text-sm sm:text-base">Help & Support</p>
+                <p className="text-xs sm:text-sm text-gray-600">Get help and contact support</p>
               </div>
             </Button>
           </div>
@@ -474,7 +574,7 @@ function CryptoExchangeApp() {
       {walletData.isConnected && (
         <Button
           variant="outline"
-          className="w-full text-orange-600 border-orange-200 hover:bg-orange-50 bg-transparent mb-3"
+          className="w-full text-orange-600 border-orange-200 hover:bg-orange-50 bg-transparent mb-3 touch-target"
           onClick={disconnectWallet}
         >
           <Wallet className="w-5 h-5 mr-2" />
@@ -484,7 +584,7 @@ function CryptoExchangeApp() {
 
       <Button
         variant="outline"
-        className="w-full text-red-600 border-red-200 hover:bg-red-50 bg-transparent"
+        className="w-full text-red-600 border-red-200 hover:bg-red-50 bg-transparent touch-target"
         onClick={handleLogout}
       >
         <LogOut className="w-5 h-5 mr-2" />
@@ -511,15 +611,17 @@ function CryptoExchangeApp() {
   }
 
   return (
-    <div className="max-w-md mx-auto bg-white min-h-screen">
+    <div className="h-full full-viewport flex flex-col max-w-md mx-auto bg-white/10 backdrop-blur-sm dark:bg-gray-900/10">
       {/* Main Content */}
-      <div className="pb-20 px-4 pt-6">
-        <div className="transition-all duration-300 ease-in-out">{renderScreen()}</div>
+      <div className="flex-1 overflow-y-auto pb-20 pt-4 sm:pt-6">
+        <div className="transition-all duration-300 ease-in-out">
+          {renderScreen()}
+        </div>
       </div>
 
-      {/* Bottom Navigation */}
-      <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-md bg-white border-t border-gray-200">
-        <div className="flex items-center justify-around py-2">
+      {/* Bottom Navigation - Mobile-Optimized */}
+      <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-md bg-white/95 backdrop-blur-md dark:bg-gray-900/95 border-t border-gray-200/50 dark:border-gray-700/50 safe-area-bottom">
+        <div className="flex items-center justify-around py-2 px-2">
           {[
             { id: "home", icon: Home, label: "Home" },
             { id: "markets", icon: TrendingUp, label: "Markets" },
@@ -529,15 +631,15 @@ function CryptoExchangeApp() {
             <Button
               key={tab.id}
               variant="ghost"
-              className={`flex flex-col items-center space-y-1 p-3 h-auto transition-all duration-200 ${
+              className={`flex flex-col items-center space-y-1 p-3 h-auto transition-all duration-200 touch-target min-w-0 flex-1 ${
                 activeTab === tab.id
-                  ? "text-purple-600 bg-purple-50"
-                  : "text-gray-600 hover:text-purple-600 hover:bg-purple-50"
+                  ? "text-purple-600 bg-purple-50 dark:bg-purple-900/20"
+                  : "text-gray-600 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20"
               }`}
               onClick={() => setActiveTab(tab.id)}
             >
-              <tab.icon className={`w-6 h-6 ${activeTab === tab.id ? "text-purple-600" : ""}`} />
-              <span className="text-xs font-medium">{tab.label}</span>
+              <tab.icon className={`w-5 h-5 sm:w-6 sm:h-6 ${activeTab === tab.id ? "text-purple-600" : ""}`} />
+              <span className="text-xs font-medium truncate">{tab.label}</span>
             </Button>
           ))}
         </div>
