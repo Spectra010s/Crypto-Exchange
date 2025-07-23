@@ -1,0 +1,145 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions for validation
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+    
+    function isValidUser(data) {
+      return data.keys().hasAll(['email', 'createdAt', 'updatedAt']) &&
+             data.email is string &&
+             data.createdAt is timestamp &&
+             data.updatedAt is timestamp;
+    }
+    
+    function isValidTransaction(data) {
+      return data.keys().hasAll(['type', 'coin', 'amount', 'value', 'date', 'userId', 'createdAt']) &&
+             data.type in ['buy', 'sell', 'send', 'receive'] &&
+             data.coin is string &&
+             data.amount is number &&
+             data.value is number &&
+             data.date is string &&
+             data.userId is string &&
+             data.createdAt is timestamp &&
+             data.amount > 0 &&
+             data.value > 0;
+    }
+    
+    function isValidPortfolio(data) {
+      return data.keys().hasAll(['userId', 'totalValue', 'holdings', 'updatedAt']) &&
+             data.userId is string &&
+             data.totalValue is number &&
+             data.holdings is map &&
+             data.updatedAt is timestamp;
+    }
+    
+    function isValidWatchlist(data) {
+      return data.keys().hasAll(['userId', 'coins', 'createdAt', 'updatedAt']) &&
+             data.userId is string &&
+             data.coins is list &&
+             data.createdAt is timestamp &&
+             data.updatedAt is timestamp;
+    }
+
+    // Users collection - stores user profile information
+    match /users/{userId} {
+      allow read, write: if isAuthenticated() && isOwner(userId);
+      allow create: if isAuthenticated() && isOwner(userId) && isValidUser(request.resource.data);
+      allow update: if isAuthenticated() && isOwner(userId) && isValidUser(request.resource.data);
+    }
+    
+    // Transactions collection - stores all buy/sell/send transactions
+    match /transactions/{transactionId} {
+      allow read: if isAuthenticated() && isOwner(resource.data.userId);
+      allow create: if isAuthenticated() && 
+                   isOwner(request.resource.data.userId) && 
+                   isValidTransaction(request.resource.data);
+      allow update: if false; // Transactions should be immutable after creation
+      allow delete: if false; // Transactions should never be deleted for audit purposes
+    }
+    
+    // User's transaction subcollection (alternative structure)
+    match /users/{userId}/transactions/{transactionId} {
+      allow read, write: if isAuthenticated() && isOwner(userId);
+      allow create: if isAuthenticated() && 
+                   isOwner(userId) && 
+                   isValidTransaction(request.resource.data);
+      allow update: if false; // Transactions should be immutable
+      allow delete: if false; // Transactions should never be deleted
+    }
+    
+    // Portfolios collection - stores user's crypto holdings
+    match /portfolios/{userId} {
+      allow read, write: if isAuthenticated() && isOwner(userId);
+      allow create: if isAuthenticated() && 
+                   isOwner(userId) && 
+                   isValidPortfolio(request.resource.data);
+      allow update: if isAuthenticated() && 
+                   isOwner(userId) && 
+                   isValidPortfolio(request.resource.data);
+    }
+    
+    // Watchlists collection - stores user's favorite coins to watch
+    match /watchlists/{userId} {
+      allow read, write: if isAuthenticated() && isOwner(userId);
+      allow create: if isAuthenticated() && 
+                   isOwner(userId) && 
+                   isValidWatchlist(request.resource.data);
+      allow update: if isAuthenticated() && 
+                   isOwner(userId) && 
+                   isValidWatchlist(request.resource.data);
+    }
+    
+    // Market data collection - read-only for all authenticated users
+    // This would be populated by admin/server functions
+    match /marketData/{coinId} {
+      allow read: if isAuthenticated();
+      allow write: if false; // Only admin functions should write market data
+    }
+    
+    // Price alerts collection - user-specific price alerts
+    match /priceAlerts/{alertId} {
+      allow read: if isAuthenticated() && isOwner(resource.data.userId);
+      allow create: if isAuthenticated() && isOwner(request.resource.data.userId);
+      allow update: if isAuthenticated() && isOwner(resource.data.userId);
+      allow delete: if isAuthenticated() && isOwner(resource.data.userId);
+    }
+    
+    // User settings collection
+    match /userSettings/{userId} {
+      allow read, write: if isAuthenticated() && isOwner(userId);
+      allow create: if isAuthenticated() && isOwner(userId);
+    }
+    
+    // Trading pairs - read-only configuration data
+    match /tradingPairs/{pairId} {
+      allow read: if isAuthenticated();
+      allow write: if false; // Only admin functions should modify trading pairs
+    }
+    
+    // Security logs - write-only for security events
+    match /securityLogs/{logId} {
+      allow read: if false; // Security logs should not be readable by clients
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if false;
+    }
+    
+    // Admin collection - only for admin users
+    match /admin/{document=**} {
+      allow read, write: if isAuthenticated() && 
+                        exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+    
+    // Deny all other requests
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

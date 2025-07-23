@@ -1,0 +1,73 @@
+rules_version = '2';
+
+// Firebase Storage Security Rules for Crypto Exchange App
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+    
+    function isValidImageFile() {
+      return request.resource.contentType.matches('image/.*') &&
+             request.resource.size < 5 * 1024 * 1024; // 5MB limit
+    }
+    
+    function isValidDocumentFile() {
+      return request.resource.contentType in ['application/pdf', 'image/jpeg', 'image/png'] &&
+             request.resource.size < 10 * 1024 * 1024; // 10MB limit
+    }
+
+    // User profile images
+    match /users/{userId}/profile/{fileName} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && 
+                   isOwner(userId) && 
+                   isValidImageFile();
+      allow delete: if isAuthenticated() && isOwner(userId);
+    }
+    
+    // User document uploads (for KYC verification)
+    match /users/{userId}/documents/{fileName} {
+      allow read: if isAuthenticated() && isOwner(userId);
+      allow write: if isAuthenticated() && 
+                   isOwner(userId) && 
+                   isValidDocumentFile();
+      allow delete: if isAuthenticated() && isOwner(userId);
+    }
+    
+    // QR codes for wallet addresses
+    match /users/{userId}/qr-codes/{fileName} {
+      allow read: if isAuthenticated() && isOwner(userId);
+      allow write: if isAuthenticated() && 
+                   isOwner(userId) && 
+                   isValidImageFile();
+      allow delete: if isAuthenticated() && isOwner(userId);
+    }
+    
+    // Transaction receipts/screenshots
+    match /users/{userId}/receipts/{fileName} {
+      allow read: if isAuthenticated() && isOwner(userId);
+      allow write: if isAuthenticated() && 
+                   isOwner(userId) && 
+                   isValidImageFile();
+      allow delete: if isAuthenticated() && isOwner(userId);
+    }
+    
+    // Public market data images (coin logos, etc.)
+    match /public/market-data/{fileName} {
+      allow read: if true; // Public read access
+      allow write: if false; // Only admin functions should write
+    }
+    
+    // Deny all other requests
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
