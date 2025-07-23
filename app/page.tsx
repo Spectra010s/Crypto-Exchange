@@ -19,6 +19,11 @@ import {
   HelpCircle,
   ExternalLink,
   Edit,
+  MessageCircle,
+  Mail,
+  Phone,
+  Camera,
+  Upload,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -26,6 +31,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { AuthForm } from "@/components/auth/auth-form"
 import { AuthProvider, useAuth } from "@/hooks/use-auth"
@@ -36,6 +42,7 @@ import { WalletConnectModal } from "@/components/wallet/wallet-connect-modal"
 import { AddFundsModal } from "@/components/wallet/add-funds-modal"
 import { SendTransactionModal } from "@/components/wallet/send-transaction-modal"
 import { SettingsPage } from "@/components/settings/settings-page"
+import { Logo } from "@/components/ui/logo"
 import { BINANCE_BUY_URL, BINANCE_SELL_URL } from "@/lib/web3-config"
 
 // Mock transactions data
@@ -50,6 +57,7 @@ function CryptoExchangeApp() {
   const { user, loading, logout, updateProfile } = useAuth()
   const { walletData, disconnectWallet, refreshBalances } = useWalletContext()
   const [activeTab, setActiveTab] = useState("home")
+  const [activeSubTab, setActiveSubTab] = useState("")
   const [balanceVisible, setBalanceVisible] = useState(true)
   const [marketData, setMarketData] = useState<CoinData[]>([])
   const [loadingMarketData, setLoadingMarketData] = useState(true)
@@ -58,6 +66,10 @@ function CryptoExchangeApp() {
   const [sendModalOpen, setSendModalOpen] = useState(false)
   const [editingUsername, setEditingUsername] = useState(false)
   const [newUsername, setNewUsername] = useState("")
+  const [profilePicModalOpen, setProfilePicModalOpen] = useState(false)
+  const [pushNotifications, setPushNotifications] = useState(false)
+  const [emailNotifications, setEmailNotifications] = useState(true)
+  const [transactionNotifications, setTransactionNotifications] = useState(true)
   const { toast } = useToast()
 
   useEffect(() => {
@@ -125,10 +137,41 @@ function CryptoExchangeApp() {
     }
   }
 
+  const handleProfilePicUpload = async () => {
+    // Mock profile picture upload
+    toast({
+      title: "Coming Soon",
+      description: "Profile picture upload will be available soon",
+    })
+    setProfilePicModalOpen(false)
+  }
+
+  const requestNotificationPermission = async () => {
+    if ("Notification" in window) {
+      const permission = await Notification.requestPermission()
+      if (permission === "granted") {
+        setPushNotifications(true)
+        toast({
+          title: "Success",
+          description: "Push notifications enabled",
+        })
+      } else {
+        toast({
+          title: "Permission Denied",
+          description: "Please enable notifications in your browser settings",
+          variant: "destructive",
+        })
+      }
+    }
+  }
+
   if (loading) {
     return (
       <div className="h-full full-viewport flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+        <div className="text-center space-y-4">
+          <Logo size="xl" />
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
+        </div>
       </div>
     )
   }
@@ -142,9 +185,22 @@ function CryptoExchangeApp() {
   }
 
   const HomeScreen = () => (
-    <div className="space-y-4 sm:space-y-6 animate-fade-in">
+    <div className="space-y-4 sm:space-y-6 animate-fade-in h-full overflow-y-auto scrollbar-hide">
+      {/* Header with Logo */}
+      <div className="flex items-center justify-between mobile-container pt-2">
+        <Logo size="md" />
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setBalanceVisible(!balanceVisible)}
+          className="text-gray-600 touch-target"
+        >
+          {balanceVisible ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
+        </Button>
+      </div>
+
       {/* Welcome Section - Mobile-First */}
-      <Card className="mobile-card gradient-purple text-white shadow-lg">
+      <Card className="mobile-card gradient-purple text-white shadow-lg mx-4">
         <CardContent className="mobile-container">
           <div className="space-y-4">
             <div>
@@ -191,7 +247,7 @@ function CryptoExchangeApp() {
       </Card>
 
       {/* Quick Actions - Mobile-First Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mx-4">
         <Card className="mobile-card hover:shadow-lg transition-all duration-300 cursor-pointer group">
           <CardContent 
             className="mobile-container text-center"
@@ -224,7 +280,7 @@ function CryptoExchangeApp() {
       </div>
 
       {/* Wallet Overview - Mobile-Optimized */}
-      <Card className="mobile-card shadow-lg">
+      <Card className="mobile-card shadow-lg mx-4">
         <CardHeader className="mobile-container pb-2">
           <CardTitle className="text-base sm:text-lg">Wallet Overview</CardTitle>
         </CardHeader>
@@ -257,16 +313,28 @@ function CryptoExchangeApp() {
           )}
         </CardContent>
       </Card>
+      
+      <div className="pb-20"></div>
     </div>
   )
 
   const MarketScreen = () => (
-    <div className="space-y-4 sm:space-y-6 animate-fade-in">
+    <div className="space-y-4 sm:space-y-6 animate-fade-in h-full overflow-y-auto scrollbar-hide">
       <div className="flex items-center justify-between mobile-container">
         <h1 className="text-xl sm:text-2xl font-bold">Markets</h1>
-        <Badge variant="secondary" className="bg-purple-100 text-purple-700 text-xs sm:text-sm">
-          Live
-        </Badge>
+        <div className="flex items-center gap-2">
+          <Badge variant="secondary" className="bg-purple-100 text-purple-700 text-xs sm:text-sm">
+            Live
+          </Badge>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => window.open('https://coinmarketcap.com', '_blank')}
+            className="text-xs px-2 py-1"
+          >
+            See More <ExternalLink className="w-3 h-3 ml-1" />
+          </Button>
+        </div>
       </div>
 
       {loadingMarketData ? (
@@ -325,11 +393,13 @@ function CryptoExchangeApp() {
           ))}
         </div>
       )}
+      
+      <div className="pb-20"></div>
     </div>
   )
 
   const WalletScreen = () => (
-    <div className="space-y-4 sm:space-y-6 animate-fade-in">
+    <div className="space-y-4 sm:space-y-6 animate-fade-in h-full overflow-y-auto scrollbar-hide">
       <div className="flex items-center justify-between mobile-container">
         <h1 className="text-xl sm:text-2xl font-bold">Wallet</h1>
         <Button
@@ -469,18 +539,232 @@ function CryptoExchangeApp() {
           </CardContent>
         </Card>
       </div>
+      
+      <div className="pb-20"></div>
+    </div>
+  )
+
+  // Security Screen
+  const SecurityScreen = () => (
+    <div className="space-y-4 sm:space-y-6 animate-fade-in h-full overflow-y-auto scrollbar-hide">
+      <div className="flex items-center gap-2 mobile-container">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setActiveSubTab("")}
+          className="mr-2 touch-target"
+        >
+          <ArrowUpRight className="w-5 h-5 rotate-180" />
+        </Button>
+        <Shield className="w-5 h-5 sm:w-6 sm:h-6" />
+        <h1 className="text-xl sm:text-2xl font-bold">Security</h1>
+      </div>
+
+      <div className="mobile-container space-y-4">
+        <Card className="mobile-card shadow-lg">
+          <CardContent className="mobile-container space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-semibold text-sm sm:text-base">Two-Factor Authentication</h3>
+                <p className="text-xs sm:text-sm text-gray-600">Add an extra layer of security</p>
+              </div>
+              <Switch defaultChecked={false} />
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-semibold text-sm sm:text-base">Biometric Login</h3>
+                <p className="text-xs sm:text-sm text-gray-600">Use fingerprint or face recognition</p>
+              </div>
+              <Switch defaultChecked={true} />
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-semibold text-sm sm:text-base">Transaction PIN</h3>
+                <p className="text-xs sm:text-sm text-gray-600">Require PIN for transactions</p>
+              </div>
+              <Switch defaultChecked={true} />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="mobile-card shadow-lg">
+          <CardContent className="mobile-container">
+            <Button variant="outline" className="w-full touch-target">
+              Change Password
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+      
+      <div className="pb-20"></div>
+    </div>
+  )
+
+  // Notifications Screen
+  const NotificationsScreen = () => (
+    <div className="space-y-4 sm:space-y-6 animate-fade-in h-full overflow-y-auto scrollbar-hide">
+      <div className="flex items-center gap-2 mobile-container">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setActiveSubTab("")}
+          className="mr-2 touch-target"
+        >
+          <ArrowUpRight className="w-5 h-5 rotate-180" />
+        </Button>
+        <Bell className="w-5 h-5 sm:w-6 sm:h-6" />
+        <h1 className="text-xl sm:text-2xl font-bold">Notifications</h1>
+      </div>
+
+      <div className="mobile-container space-y-4">
+        <Card className="mobile-card shadow-lg">
+          <CardContent className="mobile-container space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-semibold text-sm sm:text-base">Push Notifications</h3>
+                <p className="text-xs sm:text-sm text-gray-600">
+                  {pushNotifications ? "Enabled in browser" : "Tap to enable in your device"}
+                </p>
+              </div>
+              <Button
+                variant={pushNotifications ? "default" : "outline"}
+                size="sm"
+                onClick={requestNotificationPermission}
+                disabled={pushNotifications}
+                className="touch-target"
+              >
+                {pushNotifications ? "Enabled" : "Enable"}
+              </Button>
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-semibold text-sm sm:text-base">Email Notifications</h3>
+                <p className="text-xs sm:text-sm text-gray-600">Receive updates via email</p>
+              </div>
+              <Switch
+                checked={emailNotifications}
+                onCheckedChange={setEmailNotifications}
+              />
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-semibold text-sm sm:text-base">Transaction Alerts</h3>
+                <p className="text-xs sm:text-sm text-gray-600">Notifications for sending and receiving</p>
+              </div>
+              <Switch
+                checked={transactionNotifications}
+                onCheckedChange={setTransactionNotifications}
+              />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+      
+      <div className="pb-20"></div>
+    </div>
+  )
+
+  // Help & Support Screen
+  const HelpSupportScreen = () => (
+    <div className="space-y-4 sm:space-y-6 animate-fade-in h-full overflow-y-auto scrollbar-hide">
+      <div className="flex items-center gap-2 mobile-container">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setActiveSubTab("")}
+          className="mr-2 touch-target"
+        >
+          <ArrowUpRight className="w-5 h-5 rotate-180" />
+        </Button>
+        <HelpCircle className="w-5 h-5 sm:w-6 sm:h-6" />
+        <h1 className="text-xl sm:text-2xl font-bold">Help & Support</h1>
+      </div>
+
+      <div className="mobile-container space-y-4">
+        <Card className="mobile-card shadow-lg">
+          <CardHeader className="mobile-container pb-2">
+            <CardTitle className="text-base sm:text-lg">Contact Support</CardTitle>
+          </CardHeader>
+          <CardContent className="mobile-container space-y-3">
+            <Button
+              variant="outline"
+              className="w-full justify-start touch-target"
+              onClick={() => window.open('https://wa.me/2349013004266', '_blank')}
+            >
+              <MessageCircle className="w-5 h-5 mr-3 text-green-600" />
+              <div className="text-left">
+                <p className="font-medium text-sm sm:text-base">WhatsApp Support</p>
+                <p className="text-xs sm:text-sm text-gray-600">+234 901 300 4266</p>
+              </div>
+            </Button>
+
+            <Button
+              variant="outline"
+              className="w-full justify-start touch-target"
+              onClick={() => window.open('mailto:spectra010s@gmail.com', '_blank')}
+            >
+              <Mail className="w-5 h-5 mr-3 text-blue-600" />
+              <div className="text-left">
+                <p className="font-medium text-sm sm:text-base">Email Support</p>
+                <p className="text-xs sm:text-sm text-gray-600">spectra010s@gmail.com</p>
+              </div>
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="mobile-card shadow-lg">
+          <CardContent className="mobile-container space-y-3">
+            <Button variant="outline" className="w-full justify-start touch-target">
+              <div className="text-left">
+                <p className="font-medium text-sm sm:text-base">FAQ</p>
+                <p className="text-xs sm:text-sm text-gray-600">Frequently asked questions</p>
+              </div>
+            </Button>
+
+            <Button variant="outline" className="w-full justify-start touch-target">
+              <div className="text-left">
+                <p className="font-medium text-sm sm:text-base">Privacy Policy</p>
+                <p className="text-xs sm:text-sm text-gray-600">How we protect your data</p>
+              </div>
+            </Button>
+
+            <Button variant="outline" className="w-full justify-start touch-target">
+              <div className="text-left">
+                <p className="font-medium text-sm sm:text-base">Terms of Service</p>
+                <p className="text-xs sm:text-sm text-gray-600">Usage terms and conditions</p>
+              </div>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+      
+      <div className="pb-20"></div>
     </div>
   )
 
   const ProfileScreen = () => (
-    <div className="space-y-4 sm:space-y-6 animate-fade-in mobile-container">
-      <div className="text-center space-y-4">
-        <Avatar className="w-20 h-20 sm:w-24 sm:h-24 mx-auto">
-          <AvatarImage src={user.photoURL || "/placeholder.svg?height=96&width=96"} />
-          <AvatarFallback className="text-xl sm:text-2xl bg-purple-100 text-purple-600">
-            {user.displayName?.charAt(0) || user.email?.charAt(0) || "U"}
-          </AvatarFallback>
-        </Avatar>
+    <div className="space-y-4 sm:space-y-6 animate-fade-in h-full overflow-y-auto scrollbar-hide">
+      <div className="text-center space-y-4 mobile-container">
+        <div className="relative">
+          <Avatar className="w-20 h-20 sm:w-24 sm:h-24 mx-auto">
+            <AvatarImage src={user.photoURL || "/placeholder.svg?height=96&width=96"} />
+            <AvatarFallback className="text-xl sm:text-2xl bg-purple-100 text-purple-600">
+              {user.displayName?.charAt(0) || user.email?.charAt(0) || "U"}
+            </AvatarFallback>
+          </Avatar>
+          <Button
+            variant="outline"
+            size="icon"
+            className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-white shadow-lg"
+            onClick={() => setProfilePicModalOpen(true)}
+          >
+            <Camera className="w-4 h-4" />
+          </Button>
+        </div>
         
         {/* Username with Edit Functionality */}
         <div className="space-y-2">
@@ -529,7 +813,7 @@ function CryptoExchangeApp() {
         <Badge className="bg-purple-100 text-purple-700">Verified</Badge>
       </div>
 
-      <Card className="mobile-card shadow-lg">
+      <Card className="mobile-card shadow-lg mx-4">
         <CardContent className="p-0">
           <div className="space-y-1">
             <Button 
@@ -544,7 +828,11 @@ function CryptoExchangeApp() {
               </div>
             </Button>
 
-            <Button variant="ghost" className="w-full justify-start p-4 h-auto touch-target">
+            <Button 
+              variant="ghost" 
+              className="w-full justify-start p-4 h-auto touch-target"
+              onClick={() => setActiveSubTab("security")}
+            >
               <Shield className="w-5 h-5 mr-3 text-gray-600" />
               <div className="text-left">
                 <p className="font-medium text-sm sm:text-base">Security</p>
@@ -552,7 +840,11 @@ function CryptoExchangeApp() {
               </div>
             </Button>
 
-            <Button variant="ghost" className="w-full justify-start p-4 h-auto touch-target">
+            <Button 
+              variant="ghost" 
+              className="w-full justify-start p-4 h-auto touch-target"
+              onClick={() => setActiveSubTab("notifications")}
+            >
               <Bell className="w-5 h-5 mr-3 text-gray-600" />
               <div className="text-left">
                 <p className="font-medium text-sm sm:text-base">Notifications</p>
@@ -560,7 +852,11 @@ function CryptoExchangeApp() {
               </div>
             </Button>
 
-            <Button variant="ghost" className="w-full justify-start p-4 h-auto touch-target">
+            <Button 
+              variant="ghost" 
+              className="w-full justify-start p-4 h-auto touch-target"
+              onClick={() => setActiveSubTab("help")}
+            >
               <HelpCircle className="w-5 h-5 mr-3 text-gray-600" />
               <div className="text-left">
                 <p className="font-medium text-sm sm:text-base">Help & Support</p>
@@ -574,7 +870,7 @@ function CryptoExchangeApp() {
       {walletData.isConnected && (
         <Button
           variant="outline"
-          className="w-full text-orange-600 border-orange-200 hover:bg-orange-50 bg-transparent mb-3 touch-target"
+          className="w-full text-orange-600 border-orange-200 hover:bg-orange-50 bg-transparent mb-3 touch-target mx-4"
           onClick={disconnectWallet}
         >
           <Wallet className="w-5 h-5 mr-2" />
@@ -584,16 +880,22 @@ function CryptoExchangeApp() {
 
       <Button
         variant="outline"
-        className="w-full text-red-600 border-red-200 hover:bg-red-50 bg-transparent touch-target"
+        className="w-full text-red-600 border-red-200 hover:bg-red-50 bg-transparent touch-target mx-4"
         onClick={handleLogout}
       >
         <LogOut className="w-5 h-5 mr-2" />
         Sign Out
       </Button>
+      
+      <div className="pb-20"></div>
     </div>
   )
 
   const renderScreen = () => {
+    if (activeSubTab === "security") return <SecurityScreen />
+    if (activeSubTab === "notifications") return <NotificationsScreen />
+    if (activeSubTab === "help") return <HelpSupportScreen />
+    
     switch (activeTab) {
       case "home":
         return <HomeScreen />
@@ -611,10 +913,10 @@ function CryptoExchangeApp() {
   }
 
   return (
-    <div className="h-full full-viewport flex flex-col max-w-md mx-auto bg-white/10 backdrop-blur-sm dark:bg-gray-900/10">
+    <div className="h-full full-viewport flex flex-col max-w-md mx-auto bg-white/10 backdrop-blur-sm dark:bg-gray-900/10 overflow-hidden">
       {/* Main Content */}
-      <div className="flex-1 overflow-y-auto pb-20 pt-4 sm:pt-6">
-        <div className="transition-all duration-300 ease-in-out">
+      <div className="flex-1 overflow-hidden">
+        <div className="h-full">
           {renderScreen()}
         </div>
       </div>
@@ -636,7 +938,10 @@ function CryptoExchangeApp() {
                   ? "text-purple-600 bg-purple-50 dark:bg-purple-900/20"
                   : "text-gray-600 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20"
               }`}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => {
+                setActiveTab(tab.id)
+                setActiveSubTab("")
+              }}
             >
               <tab.icon className={`w-5 h-5 sm:w-6 sm:h-6 ${activeTab === tab.id ? "text-purple-600" : ""}`} />
               <span className="text-xs font-medium truncate">{tab.label}</span>
@@ -644,6 +949,35 @@ function CryptoExchangeApp() {
           ))}
         </div>
       </div>
+
+      {/* Profile Picture Upload Modal */}
+      <Dialog open={profilePicModalOpen} onOpenChange={setProfilePicModalOpen}>
+        <DialogContent className="mx-4">
+          <DialogHeader>
+            <DialogTitle>Change Profile Picture</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="text-center space-y-4">
+              <Avatar className="w-24 h-24 mx-auto">
+                <AvatarImage src={user.photoURL || "/placeholder.svg?height=96&width=96"} />
+                <AvatarFallback className="text-2xl bg-purple-100 text-purple-600">
+                  {user.displayName?.charAt(0) || user.email?.charAt(0) || "U"}
+                </AvatarFallback>
+              </Avatar>
+              <div className="space-y-2">
+                <Button variant="outline" className="w-full">
+                  <Upload className="w-4 h-4 mr-2" />
+                  Upload Photo
+                </Button>
+                <Button variant="outline" className="w-full" onClick={handleProfilePicUpload}>
+                  <Camera className="w-4 h-4 mr-2" />
+                  Take Photo
+                </Button>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Modals */}
       <WalletConnectModal
