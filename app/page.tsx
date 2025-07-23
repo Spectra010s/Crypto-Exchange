@@ -25,12 +25,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { AuthForm } from "@/components/auth/auth-form"
 import { AuthProvider, useAuth } from "@/hooks/use-auth"
-import { fetchCryptocurrencies, type CoinData } from "@/lib/coinmarketcap"
+import { fetchCryptocurrencies, type CoinData } from "@/lib/coingecko"
 import { useToast } from "@/hooks/use-toast"
 import { useWalletContext } from "@/hooks/use-wallet"
 import { WalletConnectModal } from "@/components/wallet/wallet-connect-modal"
 import { AddFundsModal } from "@/components/wallet/add-funds-modal"
 import { SendTransactionModal } from "@/components/wallet/send-transaction-modal"
+import { SettingsPage } from "@/components/settings/settings-page"
 import { BINANCE_BUY_URL, BINANCE_SELL_URL } from "@/lib/web3-config"
 
 // Mock transactions data
@@ -250,21 +251,25 @@ function CryptoExchangeApp() {
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
-                      <span className="text-xl font-bold text-purple-600">{coin.symbol.charAt(0)}</span>
+                    <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center overflow-hidden">
+                      {coin.image ? (
+                        <img src={coin.image} alt={coin.symbol} className="w-10 h-10 rounded-full" />
+                      ) : (
+                        <span className="text-xl font-bold text-purple-600">{coin.symbol.charAt(0).toUpperCase()}</span>
+                      )}
                     </div>
                     <div>
-                      <h3 className="font-semibold">{coin.symbol}</h3>
+                      <h3 className="font-semibold">{coin.symbol.toUpperCase()}</h3>
                       <p className="text-sm text-gray-600">{coin.name}</p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="font-semibold">${coin.quote.USD.price.toLocaleString()}</p>
+                    <p className="font-semibold">${coin.current_price.toLocaleString()}</p>
                     <p
-                      className={`text-sm ${coin.quote.USD.percent_change_24h >= 0 ? "text-green-600" : "text-red-600"}`}
+                      className={`text-sm ${coin.price_change_percentage_24h >= 0 ? "text-green-600" : "text-red-600"}`}
                     >
-                      {coin.quote.USD.percent_change_24h >= 0 ? "+" : ""}
-                      {coin.quote.USD.percent_change_24h.toFixed(2)}%
+                      {coin.price_change_percentage_24h >= 0 ? "+" : ""}
+                      {coin.price_change_percentage_24h.toFixed(2)}%
                     </p>
                   </div>
                 </div>
@@ -353,22 +358,35 @@ function CryptoExchangeApp() {
                 <div key={balance.symbol} className="flex items-center justify-between p-3 rounded-xl bg-gray-50">
                   <div className="flex items-center space-x-3">
                     <div className="w-10 h-10 rounded-full flex items-center justify-center bg-purple-100">
-                      <span className="text-xl">
-                        {balance.symbol === 'ETH' ? '🌐' : 
-                         balance.symbol === 'SOL' ? '☀️' : 
-                         balance.symbol === 'MATIC' ? '🟣' : 
-                         balance.symbol === 'ARB' ? '🔵' : 
-                         balance.symbol === 'OP' ? '🔴' : '💎'}
-                      </span>
+                      {balance.image ? (
+                        <img src={balance.image} alt={balance.symbol} className="w-8 h-8 rounded-full" />
+                      ) : (
+                        <span className="text-xl">
+                          {balance.symbol === 'ETH' ? '🌐' : 
+                           balance.symbol === 'SOL' ? '☀️' : 
+                           balance.symbol === 'MATIC' ? '🟣' : 
+                           balance.symbol === 'ARB' ? '🔵' : 
+                           balance.symbol === 'OP' ? '🔴' : '💎'}
+                        </span>
+                      )}
                     </div>
                     <div>
                       <p className="font-semibold">{balance.symbol}</p>
                       <p className="text-sm text-gray-600">{balance.name}</p>
+                      <div className="flex items-center gap-1 text-xs">
+                        <span className={balance.gainLossPercentage >= 0 ? "text-green-600" : "text-red-600"}>
+                          {balance.gainLossPercentage >= 0 ? "+" : ""}{balance.gainLossPercentage.toFixed(2)}%
+                        </span>
+                        <span className="text-gray-500">
+                          ({balance.gainLoss >= 0 ? "+" : ""}${balance.gainLoss.toFixed(2)})
+                        </span>
+                      </div>
                     </div>
                   </div>
                   <div className="text-right">
                     <p className="font-semibold">{balance.balance.toFixed(6)} {balance.symbol}</p>
                     <p className="text-sm text-gray-600">${balance.value.toFixed(2)}</p>
+                    <p className="text-xs text-gray-500">${balance.currentPrice.toFixed(2)} each</p>
                   </div>
                 </div>
               ))
@@ -414,7 +432,11 @@ function CryptoExchangeApp() {
       <Card className="border-0 shadow-lg">
         <CardContent className="p-0">
           <div className="space-y-1">
-            <Button variant="ghost" className="w-full justify-start p-4 h-auto">
+            <Button 
+              variant="ghost" 
+              className="w-full justify-start p-4 h-auto"
+              onClick={() => setActiveTab("settings")}
+            >
               <Settings className="w-5 h-5 mr-3 text-gray-600" />
               <div className="text-left">
                 <p className="font-medium">Account Settings</p>
@@ -481,6 +503,8 @@ function CryptoExchangeApp() {
         return <WalletScreen />
       case "profile":
         return <ProfileScreen />
+      case "settings":
+        return <SettingsPage onBack={() => setActiveTab("profile")} />
       default:
         return <HomeScreen />
     }

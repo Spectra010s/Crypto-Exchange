@@ -10,6 +10,7 @@ import { ConnectionProvider, WalletProvider as SolanaWalletProvider } from '@sol
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base'
 import { WalletModalProvider } from '@solana/wallet-adapter-react-ui'
 import { clusterApiUrl } from '@solana/web3.js'
+import { ThemeProvider } from 'next-themes'
 import { wagmiConfig, wallets, endpoint } from '@/lib/web3-config'
 import { WalletProvider } from '@/hooks/use-wallet'
 import './globals.css'
@@ -38,20 +39,22 @@ html {
         `}</style>
       </head>
       <body>
-        <WagmiProvider config={wagmiConfig}>
-          <QueryClientProvider client={queryClient}>
-            <ConnectionProvider endpoint={endpoint}>
-              <SolanaWalletProvider wallets={wallets} autoConnect>
-                <WalletModalProvider>
-                  <WalletProvider>
-                    {children}
-                    <Toaster />
-                  </WalletProvider>
-                </WalletModalProvider>
-              </SolanaWalletProvider>
-            </ConnectionProvider>
-          </QueryClientProvider>
-        </WagmiProvider>
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
+          <WagmiProvider config={wagmiConfig}>
+            <QueryClientProvider client={queryClient}>
+              <ConnectionProvider endpoint={endpoint}>
+                <SolanaWalletProvider wallets={wallets} autoConnect>
+                  <WalletModalProvider>
+                    <WalletProvider>
+                      {children}
+                      <Toaster />
+                    </WalletProvider>
+                  </WalletModalProvider>
+                </SolanaWalletProvider>
+              </ConnectionProvider>
+            </QueryClientProvider>
+          </WagmiProvider>
+        </ThemeProvider>
       </body>
     </html>
   )

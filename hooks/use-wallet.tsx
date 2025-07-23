@@ -5,6 +5,7 @@ import { useAccount, useBalance, useDisconnect as useEthDisconnect } from 'wagmi
 import { useWallet, useConnection } from '@solana/wallet-adapter-react'
 import { LAMPORTS_PER_SOL } from '@solana/web3.js'
 import { useToast } from './use-toast'
+import { fetchTokenPrices } from '@/lib/coingecko'
 
 export type WalletType = 'ethereum' | 'solana' | null
 export type NetworkType = 'mainnet' | 'polygon' | 'arbitrum' | 'optimism' | 'base' | 'solana'
@@ -15,6 +16,13 @@ export interface TokenBalance {
   balance: number
   value: number
   address?: string
+  currentPrice: number
+  priceChange24h: number
+  priceChangePercentage24h: number
+  gainLoss: number
+  gainLossPercentage: number
+  averageBuyPrice?: number
+  image?: string
 }
 
 export interface WalletData {
@@ -70,12 +78,34 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const { publicKey: solPublicKey, connected: solConnected, connecting: solConnecting, disconnect: solDisconnect, wallet } = useWallet()
   const { connection } = useConnection()
 
+  // Token ID mapping for CoinGecko
+  const tokenIdMapping = {
+    'ETH': 'ethereum',
+    'SOL': 'solana',
+    'MATIC': 'matic-network',
+    'ARB': 'arbitrum',
+    'OP': 'optimism',
+    'BASE': 'base',
+    'BTC': 'bitcoin',
+  }
+
   const mockTokenPrices = {
-    ETH: 3200,
-    SOL: 98,
-    MATIC: 0.85,
-    ARB: 1.2,
-    OP: 2.1,
+    'ethereum': 3200,
+    'solana': 98,
+    'matic-network': 0.85,
+    'arbitrum': 1.2,
+    'optimism': 2.1,
+    'bitcoin': 43250,
+  }
+
+  // Simulate historical buy prices for gain/loss calculation
+  const mockBuyPrices = {
+    'ethereum': 2800,
+    'solana': 85,
+    'matic-network': 0.75,
+    'arbitrum': 1.0,
+    'optimism': 1.8,
+    'bitcoin': 40000,
   }
 
   useEffect(() => {
@@ -88,13 +118,46 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       
       if (ethBalance) {
         const ethAmount = parseFloat(ethBalance.formatted)
+        const tokenId = tokenIdMapping['ETH']
+        const currentPrice = mockTokenPrices[tokenId] || 3200
+        const buyPrice = mockBuyPrices[tokenId] || 2800
+        const gainLoss = (currentPrice - buyPrice) * ethAmount
+        const gainLossPercentage = ((currentPrice - buyPrice) / buyPrice) * 100
+        
         balances.push({
           symbol: 'ETH',
           name: 'Ethereum',
           balance: ethAmount,
-          value: ethAmount * mockTokenPrices.ETH,
+          value: ethAmount * currentPrice,
           address: ethAddress,
+          currentPrice,
+          priceChange24h: currentPrice * 0.02, // 2% mock change
+          priceChangePercentage24h: 2.0,
+          gainLoss,
+          gainLossPercentage,
+          averageBuyPrice: buyPrice,
+          image: 'https://assets.coingecko.com/coins/images/279/large/ethereum.png',
         })
+      }
+
+      // Try to fetch real prices
+      try {
+        const tokenIds = balances.map(b => tokenIdMapping[b.symbol]).filter(Boolean)
+        const realPrices = await fetchTokenPrices(tokenIds)
+        
+        balances.forEach(balance => {
+          const tokenId = tokenIdMapping[balance.symbol]
+          if (tokenId && realPrices[tokenId]) {
+            const currentPrice = realPrices[tokenId]
+            const buyPrice = balance.averageBuyPrice || currentPrice * 0.9
+            balance.currentPrice = currentPrice
+            balance.value = balance.balance * currentPrice
+            balance.gainLoss = (currentPrice - buyPrice) * balance.balance
+            balance.gainLossPercentage = ((currentPrice - buyPrice) / buyPrice) * 100
+          }
+        })
+      } catch (error) {
+        console.error('Error fetching real prices:', error)
       }
 
       setWalletData({
@@ -110,14 +173,41 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       try {
         const balance = await connection.getBalance(solPublicKey)
         const solAmount = balance / LAMPORTS_PER_SOL
+        const tokenId = tokenIdMapping['SOL']
+        const currentPrice = mockTokenPrices[tokenId] || 98
+        const buyPrice = mockBuyPrices[tokenId] || 85
+        const gainLoss = (currentPrice - buyPrice) * solAmount
+        const gainLossPercentage = ((currentPrice - buyPrice) / buyPrice) * 100
         
         const balances: TokenBalance[] = [{
           symbol: 'SOL',
           name: 'Solana',
           balance: solAmount,
-          value: solAmount * mockTokenPrices.SOL,
+          value: solAmount * currentPrice,
           address: solPublicKey.toString(),
+          currentPrice,
+          priceChange24h: currentPrice * 0.08, // 8% mock change
+          priceChangePercentage24h: 8.0,
+          gainLoss,
+          gainLossPercentage,
+          averageBuyPrice: buyPrice,
+          image: 'https://assets.coingecko.com/coins/images/4128/large/solana.png',
         }]
+
+        // Try to fetch real price
+        try {
+          const realPrices = await fetchTokenPrices(['solana'])
+          if (realPrices['solana']) {
+            const currentPrice = realPrices['solana']
+            const buyPrice = balances[0].averageBuyPrice || currentPrice * 0.9
+            balances[0].currentPrice = currentPrice
+            balances[0].value = balances[0].balance * currentPrice
+            balances[0].gainLoss = (currentPrice - buyPrice) * balances[0].balance
+            balances[0].gainLossPercentage = ((currentPrice - buyPrice) / buyPrice) * 100
+          }
+        } catch (error) {
+          console.error('Error fetching SOL price:', error)
+        }
 
         setWalletData({
           type: 'solana',
