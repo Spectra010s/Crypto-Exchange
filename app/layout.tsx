@@ -4,6 +4,7 @@ import type React from "react"
 import { GeistSans } from "geist/font/sans"
 import { GeistMono } from "geist/font/mono"
 import { Toaster } from "@/components/ui/toaster"
+import { ThemeProvider } from "@/components/theme-provider"
 import { WagmiProvider } from 'wagmi'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ConnectionProvider, WalletProvider as SolanaWalletProvider } from '@solana/wallet-adapter-react'
@@ -38,20 +39,27 @@ html {
         `}</style>
       </head>
       <body>
-        <WagmiProvider config={wagmiConfig}>
-          <QueryClientProvider client={queryClient}>
-            <ConnectionProvider endpoint={endpoint}>
-              <SolanaWalletProvider wallets={wallets} autoConnect>
-                <WalletModalProvider>
-                  <WalletProvider>
-                    {children}
-                    <Toaster />
-                  </WalletProvider>
-                </WalletModalProvider>
-              </SolanaWalletProvider>
-            </ConnectionProvider>
-          </QueryClientProvider>
-        </WagmiProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <WagmiProvider config={wagmiConfig}>
+            <QueryClientProvider client={queryClient}>
+              <ConnectionProvider endpoint={endpoint}>
+                <SolanaWalletProvider wallets={wallets} autoConnect>
+                  <WalletModalProvider>
+                    <WalletProvider>
+                      {children}
+                      <Toaster />
+                    </WalletProvider>
+                  </WalletModalProvider>
+                </SolanaWalletProvider>
+              </ConnectionProvider>
+            </QueryClientProvider>
+          </WagmiProvider>
+        </ThemeProvider>
       </body>
     </html>
   )

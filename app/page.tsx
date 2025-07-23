@@ -24,6 +24,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { AuthForm } from "@/components/auth/auth-form"
+import { UsernameSetup } from "@/components/auth/username-setup"
+import { ThemeToggle } from "@/components/ui/theme-toggle"
 import { AuthProvider, useAuth } from "@/hooks/use-auth"
 import { fetchCryptocurrencies, type CoinData } from "@/lib/coinmarketcap"
 import { useToast } from "@/hooks/use-toast"
@@ -51,6 +53,7 @@ function CryptoExchangeApp() {
   const [walletModalOpen, setWalletModalOpen] = useState(false)
   const [addFundsModalOpen, setAddFundsModalOpen] = useState(false)
   const [sendModalOpen, setSendModalOpen] = useState(false)
+  const [showUsernameSetup, setShowUsernameSetup] = useState(false)
   const { toast } = useToast()
 
   useEffect(() => {
@@ -72,6 +75,10 @@ function CryptoExchangeApp() {
 
     if (user) {
       loadMarketData()
+      // Check if user needs to set up username
+      if (!user.displayName) {
+        setShowUsernameSetup(true)
+      }
     }
   }, [user, toast])
 
@@ -93,8 +100,11 @@ function CryptoExchangeApp() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-purple-600"></div>
+      <div className="min-h-screen flex items-center justify-center app-background">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <p className="text-purple-600 dark:text-purple-400 font-medium">Loading your crypto experience...</p>
+        </div>
       </div>
     )
   }
@@ -103,11 +113,22 @@ function CryptoExchangeApp() {
     return <AuthForm onAuthSuccess={() => {}} />
   }
 
+  if (showUsernameSetup) {
+    return (
+      <UsernameSetup 
+        currentUser={user} 
+        onComplete={() => setShowUsernameSetup(false)} 
+      />
+    )
+  }
+
   const HomeScreen = () => (
     <div className="space-y-6">
       {/* Welcome Section */}
-      <div className="bg-gradient-to-r from-purple-600 to-purple-700 rounded-3xl p-6 text-white">
-        <h1 className="text-2xl font-bold mb-2">Welcome back, {user.displayName || user.email?.split("@")[0]}!</h1>
+      <div className="bg-gradient-to-r from-purple-600 to-purple-700 rounded-3xl p-6 text-white shadow-xl backdrop-blur-sm">
+        <h1 className="text-2xl font-bold mb-2">
+          Welcome back, {user.displayName ? `${user.displayName} (${user.email})` : user.email?.split("@")[0]}!
+        </h1>
         <p className="text-purple-100 mb-4">
           {walletData.isConnected ? 'Your Web3 portfolio is ready!' : 'Connect your wallet to start trading!'}
         </p>
@@ -144,7 +165,7 @@ function CryptoExchangeApp() {
 
       {/* Quick Actions */}
       <div className="grid grid-cols-2 gap-4">
-        <Card className="border-0 shadow-lg bg-gradient-to-br from-green-50 to-green-100 cursor-pointer hover:shadow-xl transition-shadow">
+        <Card className="border-0 shadow-lg bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 cursor-pointer hover:shadow-xl transition-shadow content-overlay">
           <CardContent 
             className="p-6 text-center"
             onClick={() => window.open(BINANCE_BUY_URL, '_blank')}
@@ -159,7 +180,7 @@ function CryptoExchangeApp() {
           </CardContent>
         </Card>
 
-        <Card className="border-0 shadow-lg bg-gradient-to-br from-red-50 to-red-100 cursor-pointer hover:shadow-xl transition-shadow">
+        <Card className="border-0 shadow-lg bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 cursor-pointer hover:shadow-xl transition-shadow content-overlay">
           <CardContent 
             className="p-6 text-center"
             onClick={() => window.open(BINANCE_SELL_URL, '_blank')}
@@ -176,7 +197,7 @@ function CryptoExchangeApp() {
       </div>
 
       {/* Quick Stats */}
-      <Card className="border-0 shadow-lg">
+      <Card className="border-0 shadow-lg content-overlay">
         <CardHeader>
           <CardTitle className="text-lg">Wallet Overview</CardTitle>
         </CardHeader>
@@ -224,7 +245,7 @@ function CryptoExchangeApp() {
       {loadingMarketData ? (
         <div className="space-y-3">
           {[...Array(5)].map((_, i) => (
-            <Card key={i} className="border-0 shadow-lg">
+            <Card key={i} className="border-0 shadow-lg content-overlay">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
@@ -246,12 +267,12 @@ function CryptoExchangeApp() {
       ) : (
         <div className="space-y-3">
           {marketData.map((coin) => (
-            <Card key={coin.id} className="border-0 shadow-lg hover:shadow-xl transition-all duration-300">
+            <Card key={coin.id} className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 content-overlay">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
-                      <span className="text-xl font-bold text-purple-600">{coin.symbol.charAt(0)}</span>
+                    <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/50 rounded-full flex items-center justify-center">
+                      <span className="text-xl font-bold text-purple-600 dark:text-purple-400">{coin.symbol.charAt(0)}</span>
                     </div>
                     <div>
                       <h3 className="font-semibold">{coin.symbol}</h3>
@@ -291,7 +312,7 @@ function CryptoExchangeApp() {
       </div>
 
       {/* Balance Card */}
-      <Card className="border-0 shadow-lg bg-gradient-to-r from-purple-600 to-purple-700 text-white">
+      <Card className="border-0 shadow-lg bg-gradient-to-r from-purple-600 to-purple-700 text-white backdrop-blur-sm">
         <CardContent className="p-6">
           <div className="flex items-center justify-between mb-2">
             <p className="text-purple-200">Total Balance</p>
@@ -342,7 +363,7 @@ function CryptoExchangeApp() {
       </Card>
 
       {/* Wallet Holdings */}
-      <Card className="border-0 shadow-lg">
+      <Card className="border-0 shadow-lg content-overlay">
         <CardHeader>
           <CardTitle className="text-lg">Your Holdings</CardTitle>
         </CardHeader>
@@ -350,9 +371,9 @@ function CryptoExchangeApp() {
           {walletData.isConnected ? (
             walletData.balances.length > 0 ? (
               walletData.balances.map((balance) => (
-                <div key={balance.symbol} className="flex items-center justify-between p-3 rounded-xl bg-gray-50">
+                <div key={balance.symbol} className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 backdrop-blur-sm">
                   <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center bg-purple-100">
+                                          <div className="w-10 h-10 rounded-full flex items-center justify-center bg-purple-100 dark:bg-purple-900/50">
                       <span className="text-xl">
                         {balance.symbol === 'ETH' ? '🌐' : 
                          balance.symbol === 'SOL' ? '☀️' : 
@@ -406,12 +427,22 @@ function CryptoExchangeApp() {
             {user.displayName?.charAt(0) || user.email?.charAt(0) || "U"}
           </AvatarFallback>
         </Avatar>
-        <h1 className="text-2xl font-bold">{user.displayName || "User"}</h1>
-        <p className="text-gray-600">{user.email}</p>
-        <Badge className="mt-2 bg-purple-100 text-purple-700">Verified</Badge>
+        <h1 className="text-2xl font-bold">{user.displayName || user.email?.split("@")[0] || "User"}</h1>
+        <p className="text-gray-600 dark:text-gray-300">{user.email}</p>
+        <div className="flex items-center gap-2 mt-2">
+          <Badge className="bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300">Verified</Badge>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setShowUsernameSetup(true)}
+            className="text-xs"
+          >
+            Edit Username
+          </Button>
+        </div>
       </div>
 
-      <Card className="border-0 shadow-lg">
+      <Card className="border-0 shadow-lg content-overlay">
         <CardContent className="p-0">
           <div className="space-y-1">
             <Button variant="ghost" className="w-full justify-start p-4 h-auto">
@@ -487,14 +518,19 @@ function CryptoExchangeApp() {
   }
 
   return (
-    <div className="max-w-md mx-auto bg-white min-h-screen">
+    <div className="max-w-md mx-auto min-h-screen app-background">
+      {/* Header with theme toggle */}
+      <div className="flex justify-end p-4">
+        <ThemeToggle />
+      </div>
+      
       {/* Main Content */}
-      <div className="pb-20 px-4 pt-6">
+      <div className="pb-20 px-4">
         <div className="transition-all duration-300 ease-in-out">{renderScreen()}</div>
       </div>
 
       {/* Bottom Navigation */}
-      <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-md bg-white border-t border-gray-200">
+      <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-md content-overlay border-t border-gray-200 dark:border-gray-700 backdrop-blur-md">
         <div className="flex items-center justify-around py-2">
           {[
             { id: "home", icon: Home, label: "Home" },

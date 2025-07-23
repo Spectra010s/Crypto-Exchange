@@ -91,8 +91,8 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-purple-100 p-4">
-      <Card className="w-full max-w-md shadow-xl">
+    <div className="min-h-screen flex items-center justify-center app-background p-4">
+      <Card className="w-full max-w-md shadow-xl content-overlay">
         <CardHeader className="text-center">
           <div className="w-16 h-16 bg-gradient-to-r from-purple-600 to-purple-700 rounded-full flex items-center justify-center mx-auto mb-4">
             <span className="text-2xl font-bold text-white">₿</span>

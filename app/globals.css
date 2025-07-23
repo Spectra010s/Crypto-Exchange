@@ -87,4 +87,40 @@
   body {
     @apply bg-background text-foreground;
   }
+  
+  /* Custom background gradients */
+  .app-background {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background-attachment: fixed;
+  }
+  
+  :global(.dark) .app-background {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    background-attachment: fixed;
+  }
+  
+  /* Alternative gradients for variety */
+  .app-background-alt {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    background-attachment: fixed;
+  }
+  
+  :global(.dark) .app-background-alt {
+    background: linear-gradient(135deg, #2c1810 0%, #3c2846 50%, #1a1a2e 100%);
+    background-attachment: fixed;
+  }
+  
+  /* Subtle overlay for better readability */
+  .content-overlay {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+  
+  :global(.dark) .content-overlay {
+    background: rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
 }
