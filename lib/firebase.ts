@@ -4,14 +4,14 @@ import { getAuth } from "firebase/auth"
 import { getFirestore } from "firebase/firestore"
 
 const firebaseConfig = {
-  // Replace with your Firebase config
-  apiKey: "your-api-key",
-  authDomain: "your-project.firebaseapp.com",
-  projectId: "your-project-id",
-  storageBucket: "your-project.appspot.com",
-  messagingSenderId: "123456789",
-  appId: "your-app-id",
-}
+  apiKey: "AIzaSyBNRbqvvbEU351VBkrtH7768XJQ5MRSqzE",
+  authDomain: "crypto-exchange-36819.firebaseapp.com",
+  projectId: "crypto-exchange-36819",
+  storageBucket: "crypto-exchange-36819.firebasestorage.app",
+  messagingSenderId: "55431442629",
+  appId: "1:55431442629:web:82c6d60eac3fa95d7a80ac",
+  measurementId: "G-EX10N37Q2C"
+};
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig)
