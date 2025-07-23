@@ -17,14 +17,16 @@ A comprehensive Web3 crypto exchange application built with Next.js 15.2.4 and m
 - **Real Portfolio Tracking**: Shows actual wallet balances and values
 - **Add Funds**: Generate deposit addresses for different networks
 - **Send Transactions**: Send tokens with wallet integration
-- **Market Data**: Real-time crypto prices (CoinMarketCap integration)
+- **Market Data**: Real-time crypto prices (CoinGecko integration)
+- **Advanced Portfolio**: Shows gains/losses, price changes, and detailed analytics
 - **Buy/Sell Links**: Direct integration with Binance
 
 ### 🎨 Modern UI
 - **Mobile-First**: Responsive design optimized for mobile
 - **Beautiful Interface**: Modern gradients and animations
-- **Dark/Light Mode**: Theme switching support
+- **Dark/Light Mode**: Full theme switching support with system detection
 - **Toast Notifications**: User-friendly feedback
+- **Advanced Settings**: Phone verification, 2FA, password management
 
 ## 🛠 Tech Stack
 
@@ -57,7 +59,7 @@ A comprehensive Web3 crypto exchange application built with Next.js 15.2.4 and m
 
 3. **Configure your environment variables:**
    - Get a WalletConnect Project ID from [WalletConnect Cloud](https://cloud.walletconnect.com)
-   - (Optional) Get a CoinMarketCap API key for real market data
+   - (Optional) Get a CoinGecko API key for real market data
    - (Optional) Configure custom RPC endpoints
 
 4. **Run the development server:**
@@ -76,10 +78,10 @@ A comprehensive Web3 crypto exchange application built with Next.js 15.2.4 and m
    - Create a new project
    - Copy the Project ID to `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID`
 
-2. **CoinMarketCap API** (Optional for real market data):
-   - Visit [CoinMarketCap API](https://coinmarketcap.com/api/)
-   - Get a free API key
-   - Add to `NEXT_PUBLIC_CMC_API_KEY`
+2. **CoinGecko API** (Optional for real market data):
+   - Visit [CoinGecko API](https://coingecko.com/en/api) - Free tier available!
+   - Get a free API key (optional, works without API key with rate limits)
+   - Add to `NEXT_PUBLIC_COINGECKO_API_KEY`
 
 ### Wallet Support
 
@@ -130,6 +132,16 @@ The app supports these wallet types:
 - **Buy**: Direct links to Binance for purchasing crypto
 - **Sell**: Direct links to Binance trading pairs
 
+### Account Settings
+1. Go to Profile tab
+2. Click "Account Settings"
+3. Configure:
+   - **Phone Verification**: Add and verify phone number
+   - **Theme Settings**: Switch between light and dark themes
+   - **Password Change**: Update your account password
+   - **Two-Factor Authentication**: Enable/disable 2FA with authenticator apps
+   - **Notifications**: Configure email, push, and transaction alerts
+
 ## 📱 Mobile Experience
 
 The app is optimized for mobile use with:
@@ -165,7 +177,7 @@ vercel
 ### Environment Variables for Production
 Make sure to set all environment variables in your deployment platform:
 - `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID`
-- `NEXT_PUBLIC_CMC_API_KEY` (optional)
+- `NEXT_PUBLIC_COINGECKO_API_KEY` (optional)
 - Firebase config variables (if overriding defaults)
 
 ## 🤝 Contributing
