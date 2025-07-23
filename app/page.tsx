@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   Home,
   TrendingUp,
@@ -22,16 +22,12 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
+import { AuthForm } from "@/components/auth/auth-form"
+import { AuthProvider, useAuth } from "@/hooks/use-auth"
+import { fetchCryptocurrencies, type CoinData } from "@/lib/coinmarketcap"
+import { useToast } from "@/hooks/use-toast"
 
-// Mock data
-const marketData = [
-  { symbol: "BTC", name: "Bitcoin", price: 43250.5, change: 2.45, icon: "₿" },
-  { symbol: "ETH", name: "Ethereum", price: 2680.75, change: -1.23, icon: "Ξ" },
-  { symbol: "BNB", name: "Binance Coin", price: 315.2, change: 4.67, icon: "B" },
-  { symbol: "SOL", name: "Solana", price: 98.45, change: 8.92, icon: "S" },
-  { symbol: "ADA", name: "Cardano", price: 0.52, change: -3.15, icon: "A" },
-]
-
+// Mock transactions data
 const transactions = [
   { id: 1, type: "buy", coin: "BTC", amount: 0.025, value: 1081.25, date: "2024-01-15" },
   { id: 2, type: "sell", coin: "ETH", amount: 1.5, value: 4021.13, date: "2024-01-14" },
@@ -39,15 +35,69 @@ const transactions = [
   { id: 4, type: "send", coin: "BTC", amount: 0.01, value: 432.5, date: "2024-01-12" },
 ]
 
-export default function CryptoExchangeApp() {
+function CryptoExchangeApp() {
+  const { user, loading, logout } = useAuth()
   const [activeTab, setActiveTab] = useState("home")
   const [balanceVisible, setBalanceVisible] = useState(true)
+  const [marketData, setMarketData] = useState<CoinData[]>([])
+  const [loadingMarketData, setLoadingMarketData] = useState(true)
+  const { toast } = useToast()
+
+  useEffect(() => {
+    const loadMarketData = async () => {
+      try {
+        setLoadingMarketData(true)
+        const data = await fetchCryptocurrencies(5)
+        setMarketData(data)
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to load market data",
+          variant: "destructive",
+        })
+      } finally {
+        setLoadingMarketData(false)
+      }
+    }
+
+    if (user) {
+      loadMarketData()
+    }
+  }, [user, toast])
+
+  const handleLogout = async () => {
+    try {
+      await logout()
+      toast({
+        title: "Success",
+        description: "Signed out successfully",
+      })
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to sign out",
+        variant: "destructive",
+      })
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-purple-600"></div>
+      </div>
+    )
+  }
+
+  if (!user) {
+    return <AuthForm onAuthSuccess={() => {}} />
+  }
 
   const HomeScreen = () => (
     <div className="space-y-6">
       {/* Welcome Section */}
       <div className="bg-gradient-to-r from-purple-600 to-purple-700 rounded-3xl p-6 text-white">
-        <h1 className="text-2xl font-bold mb-2">Welcome back, Alex!</h1>
+        <h1 className="text-2xl font-bold mb-2">Welcome back, {user.displayName || user.email?.split("@")[0]}!</h1>
         <p className="text-purple-100 mb-4">Ready to trade today?</p>
         <div className="flex items-center justify-between">
           <div>
@@ -118,32 +168,58 @@ export default function CryptoExchangeApp() {
         </Badge>
       </div>
 
-      <div className="space-y-3">
-        {marketData.map((coin) => (
-          <Card key={coin.symbol} className="border-0 shadow-lg hover:shadow-xl transition-all duration-300">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
-                    <span className="text-xl font-bold text-purple-600">{coin.icon}</span>
+      {loadingMarketData ? (
+        <div className="space-y-3">
+          {[...Array(5)].map((_, i) => (
+            <Card key={i} className="border-0 shadow-lg">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-12 h-12 bg-gray-200 rounded-full animate-pulse"></div>
+                    <div className="space-y-2">
+                      <div className="h-4 bg-gray-200 rounded animate-pulse w-16"></div>
+                      <div className="h-3 bg-gray-200 rounded animate-pulse w-20"></div>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="font-semibold">{coin.symbol}</h3>
-                    <p className="text-sm text-gray-600">{coin.name}</p>
+                  <div className="text-right space-y-2">
+                    <div className="h-4 bg-gray-200 rounded animate-pulse w-20"></div>
+                    <div className="h-3 bg-gray-200 rounded animate-pulse w-12"></div>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="font-semibold">${coin.price.toLocaleString()}</p>
-                  <p className={`text-sm ${coin.change >= 0 ? "text-green-600" : "text-red-600"}`}>
-                    {coin.change >= 0 ? "+" : ""}
-                    {coin.change}%
-                  </p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {marketData.map((coin) => (
+            <Card key={coin.id} className="border-0 shadow-lg hover:shadow-xl transition-all duration-300">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                      <span className="text-xl font-bold text-purple-600">{coin.symbol.charAt(0)}</span>
+                    </div>
+                    <div>
+                      <h3 className="font-semibold">{coin.symbol}</h3>
+                      <p className="text-sm text-gray-600">{coin.name}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-semibold">${coin.quote.USD.price.toLocaleString()}</p>
+                    <p
+                      className={`text-sm ${coin.quote.USD.percent_change_24h >= 0 ? "text-green-600" : "text-red-600"}`}
+                    >
+                      {coin.quote.USD.percent_change_24h >= 0 ? "+" : ""}
+                      {coin.quote.USD.percent_change_24h.toFixed(2)}%
+                    </p>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   )
 
@@ -232,11 +308,13 @@ export default function CryptoExchangeApp() {
     <div className="space-y-6">
       <div className="text-center">
         <Avatar className="w-24 h-24 mx-auto mb-4">
-          <AvatarImage src="/placeholder.svg?height=96&width=96" />
-          <AvatarFallback className="text-2xl bg-purple-100 text-purple-600">AJ</AvatarFallback>
+          <AvatarImage src={user.photoURL || "/placeholder.svg?height=96&width=96"} />
+          <AvatarFallback className="text-2xl bg-purple-100 text-purple-600">
+            {user.displayName?.charAt(0) || user.email?.charAt(0) || "U"}
+          </AvatarFallback>
         </Avatar>
-        <h1 className="text-2xl font-bold">Alex Johnson</h1>
-        <p className="text-gray-600">alex.johnson@email.com</p>
+        <h1 className="text-2xl font-bold">{user.displayName || "User"}</h1>
+        <p className="text-gray-600">{user.email}</p>
         <Badge className="mt-2 bg-purple-100 text-purple-700">Verified</Badge>
       </div>
 
@@ -278,7 +356,11 @@ export default function CryptoExchangeApp() {
         </CardContent>
       </Card>
 
-      <Button variant="outline" className="w-full text-red-600 border-red-200 hover:bg-red-50 bg-transparent">
+      <Button
+        variant="outline"
+        className="w-full text-red-600 border-red-200 hover:bg-red-50 bg-transparent"
+        onClick={handleLogout}
+      >
         <LogOut className="w-5 h-5 mr-2" />
         Sign Out
       </Button>
@@ -333,5 +415,13 @@ export default function CryptoExchangeApp() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <CryptoExchangeApp />
+    </AuthProvider>
   )
 }
