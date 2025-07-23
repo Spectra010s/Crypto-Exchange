@@ -84,7 +84,147 @@
   * {
     @apply border-border;
   }
+  
+  html, body {
+    @apply h-full;
+  }
+  
   body {
     @apply bg-background text-foreground;
+    /* Mobile-first full background coverage */
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 50%, #e2e8f0 100%);
+    min-height: 100vh;
+    min-height: 100dvh; /* Dynamic viewport height for mobile browsers */
+  }
+  
+  /* Dark mode background */
+  body.dark {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+  }
+}
+
+/* Mobile-first responsive utilities */
+@layer utilities {
+  /* Full viewport coverage */
+  .full-viewport {
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+  
+  /* Mobile touch targets */
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Mobile-optimized spacing */
+  .mobile-container {
+    @apply px-4 py-2;
+  }
+  
+  .mobile-section {
+    @apply mb-6;
+  }
+  
+  /* Responsive text sizing */
+  .text-mobile-sm {
+    @apply text-sm;
+  }
+  
+  .text-mobile-base {
+    @apply text-base;
+  }
+  
+  .text-mobile-lg {
+    @apply text-lg;
+  }
+  
+  .text-mobile-xl {
+    @apply text-xl;
+  }
+  
+  /* Mobile-first card styling */
+  .mobile-card {
+    @apply rounded-xl shadow-sm border-0 bg-white/80 backdrop-blur-sm;
+  }
+  
+  .mobile-card.dark {
+    @apply bg-slate-900/80;
+  }
+  
+  /* Enhanced mobile gradients */
+  .gradient-purple {
+    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 50%, #6d28d9 100%);
+  }
+  
+  .gradient-green {
+    background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%);
+  }
+  
+  .gradient-red {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 50%, #b91c1c 100%);
+  }
+  
+  .gradient-blue {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 50%, #1d4ed8 100%);
+  }
+}
+
+/* Mobile-specific animations */
+@layer utilities {
+  .animate-slide-up {
+    animation: slideUp 0.3s ease-out;
+  }
+  
+  .animate-fade-in {
+    animation: fadeIn 0.4s ease-out;
+  }
+  
+  .animate-scale-in {
+    animation: scaleIn 0.2s ease-out;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Mobile-first responsive breakpoints */
+@media (min-width: 768px) {
+  .mobile-container {
+    @apply px-6 py-4;
+  }
+}
+
+@media (min-width: 1024px) {
+  .mobile-container {
+    @apply px-8 py-6;
   }
 }

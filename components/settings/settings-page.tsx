@@ -236,286 +236,293 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
   }
 
   return (
-    <div className="space-y-6 p-4">
-      <div className="flex items-center gap-2 mb-6">
+    <div className="space-y-4 sm:space-y-6 animate-fade-in">
+      <div className="flex items-center gap-2 mobile-container">
         {onBack && (
           <Button
             variant="ghost"
             size="icon"
             onClick={onBack}
-            className="mr-2"
+            className="mr-2 touch-target"
           >
             <ArrowLeft className="w-5 h-5" />
           </Button>
         )}
-        <Settings className="w-6 h-6" />
-        <h1 className="text-2xl font-bold">Settings</h1>
+        <Settings className="w-5 h-5 sm:w-6 sm:h-6" />
+        <h1 className="text-xl sm:text-2xl font-bold">Settings</h1>
       </div>
 
-      {/* Account Information */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <User className="w-5 h-5" />
-            Account Information
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <Label>Email</Label>
-            <div className="flex items-center gap-2 mt-1">
-              <Input value={user?.email || ""} readOnly className="bg-gray-50" />
-              <Badge variant="secondary" className="bg-green-100 text-green-800">
-                Verified
-              </Badge>
-            </div>
-          </div>
-          <div>
-            <Label>Display Name</Label>
-            <Input value={user?.displayName || "Not set"} className="mt-1" />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Phone Verification */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Phone className="w-5 h-5" />
-            Phone Verification
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center gap-2">
-            <Input 
-              placeholder="+1 (555) 123-4567"
-              value={phoneNumber}
-              onChange={(e) => setPhoneNumber(e.target.value)}
-              disabled={isPhoneVerified}
-            />
-            {isPhoneVerified ? (
-              <Badge className="bg-green-100 text-green-800 flex items-center gap-1">
-                <CheckCircle className="w-3 h-3" />
-                Verified
-              </Badge>
-            ) : (
-              <Button 
-                onClick={handlePhoneVerification}
-                disabled={isVerifying}
-                size="sm"
-              >
-                {isVerifying ? "Sending..." : "Verify"}
-              </Button>
-            )}
-          </div>
-          
-          {showVerificationInput && (
-            <div className="flex items-center gap-2">
-              <Input 
-                placeholder="Enter 6-digit code"
-                value={verificationCode}
-                onChange={(e) => setVerificationCode(e.target.value)}
-                maxLength={6}
-              />
-              <Button onClick={handleVerifyCode} size="sm">
-                Confirm
-              </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Theme Settings */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Palette className="w-5 h-5" />
-            Appearance
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between">
+      <div className="mobile-container space-y-4 sm:space-y-6">
+        {/* Account Information */}
+        <Card className="mobile-card shadow-lg">
+          <CardHeader className="mobile-container pb-2">
+            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+              <User className="w-4 h-4 sm:w-5 sm:h-5" />
+              Account Information
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="mobile-container pt-0 space-y-4">
             <div>
-              <Label className="text-base">Theme</Label>
-              <p className="text-sm text-gray-600">Choose between light and dark theme</p>
+              <Label className="text-sm sm:text-base">Email</Label>
+              <div className="flex items-center gap-2 mt-1">
+                <Input value={user?.email || ""} readOnly className="bg-gray-50 text-sm sm:text-base" />
+                <Badge variant="secondary" className="bg-green-100 text-green-800 text-xs">
+                  Verified
+                </Badge>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm">Light</span>
-              <Switch
-                checked={theme === 'dark'}
-                onCheckedChange={(checked) => setTheme(checked ? 'dark' : 'light')}
-              />
-              <span className="text-sm">Dark</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Password Change */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Key className="w-5 h-5" />
-            Change Password
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <Label>Current Password</Label>
-            <div className="relative mt-1">
-              <Input 
-                type={showPasswords ? "text" : "password"}
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-              />
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="absolute right-0 top-0 h-full px-3"
-                onClick={() => setShowPasswords(!showPasswords)}
-              >
-                {showPasswords ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </Button>
-            </div>
-          </div>
-          
-          <div>
-            <Label>New Password</Label>
-            <Input 
-              type={showPasswords ? "text" : "password"}
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              className="mt-1"
-            />
-          </div>
-          
-          <div>
-            <Label>Confirm New Password</Label>
-            <Input 
-              type={showPasswords ? "text" : "password"}
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className="mt-1"
-            />
-          </div>
-          
-          <Button 
-            onClick={handlePasswordChange}
-            disabled={isChangingPassword}
-            className="w-full"
-          >
-            {isChangingPassword ? "Changing Password..." : "Change Password"}
-          </Button>
-        </CardContent>
-      </Card>
-
-      {/* Two-Factor Authentication */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Shield className="w-5 h-5" />
-            Two-Factor Authentication
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
             <div>
-              <Label className="text-base">2FA Status</Label>
-              <p className="text-sm text-gray-600">
-                {is2FAEnabled ? "Enhanced security is active" : "Add an extra layer of security"}
-              </p>
+              <Label className="text-sm sm:text-base">Display Name</Label>
+              <Input value={user?.displayName || "Not set"} className="mt-1 text-sm sm:text-base" />
             </div>
-            <Badge variant={is2FAEnabled ? "default" : "secondary"}>
-              {is2FAEnabled ? "Enabled" : "Disabled"}
-            </Badge>
-          </div>
+          </CardContent>
+        </Card>
 
-          {!is2FAEnabled ? (
-            <div className="space-y-4">
-              <Button 
-                onClick={handleEnable2FA}
-                disabled={isEnabling2FA}
-                className="w-full"
-              >
-                {isEnabling2FA ? "Setting up..." : "Enable 2FA"}
-              </Button>
-              
-              {qrCodeUrl && (
-                <div className="text-center space-y-4">
-                  <img src={qrCodeUrl} alt="2FA QR Code" className="mx-auto" />
-                  <div>
-                    <Label>Enter code from authenticator app</Label>
-                    <div className="flex gap-2 mt-1">
-                      <Input 
-                        placeholder="123456"
-                        value={twoFactorCode}
-                        onChange={(e) => setTwoFactorCode(e.target.value)}
-                        maxLength={6}
-                      />
-                      <Button onClick={handleConfirm2FA}>
-                        Confirm
-                      </Button>
-                    </div>
-                  </div>
-                </div>
+        {/* Phone Verification */}
+        <Card className="mobile-card shadow-lg">
+          <CardHeader className="mobile-container pb-2">
+            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+              <Phone className="w-4 h-4 sm:w-5 sm:h-5" />
+              Phone Verification
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="mobile-container pt-0 space-y-4">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+              <Input 
+                placeholder="+1 (555) 123-4567"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                disabled={isPhoneVerified}
+                className="text-sm sm:text-base flex-1"
+              />
+              {isPhoneVerified ? (
+                <Badge className="bg-green-100 text-green-800 flex items-center gap-1 justify-center py-2">
+                  <CheckCircle className="w-3 h-3" />
+                  Verified
+                </Badge>
+              ) : (
+                <Button 
+                  onClick={handlePhoneVerification}
+                  disabled={isVerifying}
+                  size="sm"
+                  className="touch-target"
+                >
+                  {isVerifying ? "Sending..." : "Verify"}
+                </Button>
               )}
             </div>
-          ) : (
-            <Button 
-              variant="destructive" 
-              onClick={handleDisable2FA}
-              className="w-full"
-            >
-              Disable 2FA
-            </Button>
-          )}
-        </CardContent>
-      </Card>
+            
+            {showVerificationInput && (
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                <Input 
+                  placeholder="Enter 6-digit code"
+                  value={verificationCode}
+                  onChange={(e) => setVerificationCode(e.target.value)}
+                  maxLength={6}
+                  className="text-sm sm:text-base flex-1"
+                />
+                <Button onClick={handleVerifyCode} size="sm" className="touch-target">
+                  Confirm
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
-      {/* Notification Settings */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Bell className="w-5 h-5" />
-            Notifications
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <Label>Email Notifications</Label>
-              <p className="text-sm text-gray-600">Receive updates via email</p>
+        {/* Theme Settings */}
+        <Card className="mobile-card shadow-lg">
+          <CardHeader className="mobile-container pb-2">
+            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+              <Palette className="w-4 h-4 sm:w-5 sm:h-5" />
+              Appearance
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="mobile-container pt-0">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-sm sm:text-base font-medium">Theme</Label>
+                <p className="text-xs sm:text-sm text-gray-600 mt-1">Choose between light and dark theme</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs sm:text-sm">Light</span>
+                <Switch
+                  checked={theme === 'dark'}
+                  onCheckedChange={(checked) => setTheme(checked ? 'dark' : 'light')}
+                />
+                <span className="text-xs sm:text-sm">Dark</span>
+              </div>
             </div>
-            <Switch
-              checked={emailNotifications}
-              onCheckedChange={setEmailNotifications}
-            />
-          </div>
-          
-          <div className="flex items-center justify-between">
+          </CardContent>
+        </Card>
+
+        {/* Password Change */}
+        <Card className="mobile-card shadow-lg">
+          <CardHeader className="mobile-container pb-2">
+            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+              <Key className="w-4 h-4 sm:w-5 sm:h-5" />
+              Change Password
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="mobile-container pt-0 space-y-4">
             <div>
-              <Label>Push Notifications</Label>
-              <p className="text-sm text-gray-600">Browser push notifications</p>
+              <Label className="text-sm sm:text-base">Current Password</Label>
+              <div className="relative mt-1">
+                <Input 
+                  type={showPasswords ? "text" : "password"}
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  className="text-sm sm:text-base pr-10"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-0 top-0 h-full px-3"
+                  onClick={() => setShowPasswords(!showPasswords)}
+                >
+                  {showPasswords ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
+              </div>
             </div>
-            <Switch
-              checked={pushNotifications}
-              onCheckedChange={setPushNotifications}
-            />
-          </div>
-          
-          <div className="flex items-center justify-between">
+            
             <div>
-              <Label>Transaction Alerts</Label>
-              <p className="text-sm text-gray-600">Notifications for wallet activity</p>
+              <Label className="text-sm sm:text-base">New Password</Label>
+              <Input 
+                type={showPasswords ? "text" : "password"}
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                className="mt-1 text-sm sm:text-base"
+              />
             </div>
-            <Switch
-              checked={transactionAlerts}
-              onCheckedChange={setTransactionAlerts}
-            />
-          </div>
-        </CardContent>
-      </Card>
+            
+            <div>
+              <Label className="text-sm sm:text-base">Confirm New Password</Label>
+              <Input 
+                type={showPasswords ? "text" : "password"}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="mt-1 text-sm sm:text-base"
+              />
+            </div>
+            
+            <Button 
+              onClick={handlePasswordChange}
+              disabled={isChangingPassword}
+              className="w-full touch-target"
+            >
+              {isChangingPassword ? "Changing Password..." : "Change Password"}
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Two-Factor Authentication */}
+        <Card className="mobile-card shadow-lg">
+          <CardHeader className="mobile-container pb-2">
+            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+              <Shield className="w-4 h-4 sm:w-5 sm:h-5" />
+              Two-Factor Authentication
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="mobile-container pt-0 space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-sm sm:text-base font-medium">2FA Status</Label>
+                <p className="text-xs sm:text-sm text-gray-600 mt-1">
+                  {is2FAEnabled ? "Enhanced security is active" : "Add an extra layer of security"}
+                </p>
+              </div>
+              <Badge variant={is2FAEnabled ? "default" : "secondary"} className="text-xs">
+                {is2FAEnabled ? "Enabled" : "Disabled"}
+              </Badge>
+            </div>
+
+            {!is2FAEnabled ? (
+              <div className="space-y-4">
+                <Button 
+                  onClick={handleEnable2FA}
+                  disabled={isEnabling2FA}
+                  className="w-full touch-target"
+                >
+                  {isEnabling2FA ? "Setting up..." : "Enable 2FA"}
+                </Button>
+                
+                {qrCodeUrl && (
+                  <div className="text-center space-y-4">
+                    <img src={qrCodeUrl} alt="2FA QR Code" className="mx-auto max-w-[200px] w-full h-auto" />
+                    <div>
+                      <Label className="text-sm sm:text-base">Enter code from authenticator app</Label>
+                      <div className="flex flex-col sm:flex-row gap-2 mt-1">
+                        <Input 
+                          placeholder="123456"
+                          value={twoFactorCode}
+                          onChange={(e) => setTwoFactorCode(e.target.value)}
+                          maxLength={6}
+                          className="text-sm sm:text-base flex-1"
+                        />
+                        <Button onClick={handleConfirm2FA} className="touch-target">
+                          Confirm
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <Button 
+                variant="destructive" 
+                onClick={handleDisable2FA}
+                className="w-full touch-target"
+              >
+                Disable 2FA
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Notification Settings */}
+        <Card className="mobile-card shadow-lg">
+          <CardHeader className="mobile-container pb-2">
+            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+              <Bell className="w-4 h-4 sm:w-5 sm:h-5" />
+              Notifications
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="mobile-container pt-0 space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-sm sm:text-base font-medium">Email Notifications</Label>
+                <p className="text-xs sm:text-sm text-gray-600 mt-1">Receive updates via email</p>
+              </div>
+              <Switch
+                checked={emailNotifications}
+                onCheckedChange={setEmailNotifications}
+              />
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-sm sm:text-base font-medium">Push Notifications</Label>
+                <p className="text-xs sm:text-sm text-gray-600 mt-1">Browser push notifications</p>
+              </div>
+              <Switch
+                checked={pushNotifications}
+                onCheckedChange={setPushNotifications}
+              />
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-sm sm:text-base font-medium">Transaction Alerts</Label>
+                <p className="text-xs sm:text-sm text-gray-600 mt-1">Notifications for wallet activity</p>
+              </div>
+              <Switch
+                checked={transactionAlerts}
+                onCheckedChange={setTransactionAlerts}
+              />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }
