@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Badge } from "@/components/ui/badge"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { 
   Settings, 
@@ -20,7 +21,9 @@ import {
   AlertCircle,
   Eye,
   EyeOff,
-  ArrowLeft
+  ArrowLeft,
+  Camera,
+  Upload
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/hooks/use-auth"
@@ -41,6 +44,7 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
   const [verificationCode, setVerificationCode] = useState("")
   const [isVerifying, setIsVerifying] = useState(false)
   const [showVerificationInput, setShowVerificationInput] = useState(false)
+  const [profilePicModalOpen, setProfilePicModalOpen] = useState(false)
   
   // Password change state
   const [currentPassword, setCurrentPassword] = useState("")
@@ -235,8 +239,17 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
     }
   }
 
+  const handleProfilePicUpload = async () => {
+    // Mock profile picture upload
+    toast({
+      title: "Coming Soon",
+      description: "Profile picture upload will be available soon",
+    })
+    setProfilePicModalOpen(false)
+  }
+
   return (
-    <div className="space-y-4 sm:space-y-6 animate-fade-in">
+    <div className="space-y-4 sm:space-y-6 animate-fade-in h-full overflow-y-auto scrollbar-hide">
       <div className="flex items-center gap-2 mobile-container">
         {onBack && (
           <Button
@@ -262,6 +275,30 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
             </CardTitle>
           </CardHeader>
           <CardContent className="mobile-container pt-0 space-y-4">
+            {/* Profile Picture Section */}
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <Avatar className="w-16 h-16">
+                  <AvatarImage src={user?.photoURL || "/placeholder.svg?height=64&width=64"} />
+                  <AvatarFallback className="text-lg bg-purple-100 text-purple-600">
+                    {user?.displayName?.charAt(0) || user?.email?.charAt(0) || "U"}
+                  </AvatarFallback>
+                </Avatar>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-white shadow-md"
+                  onClick={() => setProfilePicModalOpen(true)}
+                >
+                  <Camera className="w-3 h-3" />
+                </Button>
+              </div>
+              <div className="flex-1">
+                <p className="font-medium text-sm sm:text-base">{user?.displayName || "User"}</p>
+                <p className="text-xs sm:text-sm text-gray-600">Tap to change profile picture</p>
+              </div>
+            </div>
+
             <div>
               <Label className="text-sm sm:text-base">Email</Label>
               <div className="flex items-center gap-2 mt-1">
@@ -523,6 +560,37 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
           </CardContent>
         </Card>
       </div>
+
+      {/* Profile Picture Upload Modal */}
+      <Dialog open={profilePicModalOpen} onOpenChange={setProfilePicModalOpen}>
+        <DialogContent className="mx-4">
+          <DialogHeader>
+            <DialogTitle>Change Profile Picture</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="text-center space-y-4">
+              <Avatar className="w-24 h-24 mx-auto">
+                <AvatarImage src={user?.photoURL || "/placeholder.svg?height=96&width=96"} />
+                <AvatarFallback className="text-2xl bg-purple-100 text-purple-600">
+                  {user?.displayName?.charAt(0) || user?.email?.charAt(0) || "U"}
+                </AvatarFallback>
+              </Avatar>
+              <div className="space-y-2">
+                <Button variant="outline" className="w-full">
+                  <Upload className="w-4 h-4 mr-2" />
+                  Upload Photo
+                </Button>
+                <Button variant="outline" className="w-full" onClick={handleProfilePicUpload}>
+                  <Camera className="w-4 h-4 mr-2" />
+                  Take Photo
+                </Button>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+      
+      <div className="pb-20"></div>
     </div>
   )
 }
