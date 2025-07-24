@@ -240,7 +240,7 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
   }
 
   return (
-    <div className="space-y-6 p-4">
+    <div className="space-y-6 p-0">
       <div className="flex items-center gap-2 mb-6">
         {onBack && (
           <Button

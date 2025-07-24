@@ -444,7 +444,11 @@ function CryptoExchangeApp() {
               </div>
             </Button>
 
-            <Button variant="ghost" className="w-full justify-start p-4 h-auto">
+            <Button 
+              variant="ghost" 
+              className="w-full justify-start p-4 h-auto"
+              onClick={() => setActiveTab("settings")}
+            >
               <Shield className="w-5 h-5 mr-3 text-gray-600" />
               <div className="text-left">
                 <p className="font-medium">Security</p>
@@ -452,7 +456,11 @@ function CryptoExchangeApp() {
               </div>
             </Button>
 
-            <Button variant="ghost" className="w-full justify-start p-4 h-auto">
+            <Button 
+              variant="ghost" 
+              className="w-full justify-start p-4 h-auto"
+              onClick={() => setActiveTab("settings")}
+            >
               <Bell className="w-5 h-5 mr-3 text-gray-600" />
               <div className="text-left">
                 <p className="font-medium">Notifications</p>
@@ -460,7 +468,16 @@ function CryptoExchangeApp() {
               </div>
             </Button>
 
-            <Button variant="ghost" className="w-full justify-start p-4 h-auto">
+            <Button 
+              variant="ghost" 
+              className="w-full justify-start p-4 h-auto"
+              onClick={() => {
+                toast({
+                  title: "Help & Support",
+                  description: "For support, please contact us at support@cryptoexchange.com or check our documentation.",
+                })
+              }}
+            >
               <HelpCircle className="w-5 h-5 mr-3 text-gray-600" />
               <div className="text-left">
                 <p className="font-medium">Help & Support</p>
@@ -511,14 +528,14 @@ function CryptoExchangeApp() {
   }
 
   return (
-    <div className="max-w-md mx-auto bg-white min-h-screen">
+    <div className="mobile-app bg-white min-h-screen">
       {/* Main Content */}
-      <div className="pb-20 px-4 pt-6">
+      <div className="pb-20 mobile-content pt-6">
         <div className="transition-all duration-300 ease-in-out">{renderScreen()}</div>
       </div>
 
       {/* Bottom Navigation */}
-      <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-md bg-white border-t border-gray-200">
+      <div className="mobile-bottom-nav bg-white border-t border-gray-200">
         <div className="flex items-center justify-around py-2">
           {[
             { id: "home", icon: Home, label: "Home" },

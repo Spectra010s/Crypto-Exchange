@@ -30,7 +30,7 @@ export default function RootLayout({
               <head>
           <title>Crypto Exchange App</title>
           <meta name="description" content="A modern crypto exchange application" />
-          <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+          <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover" />
           <style>{`
 html {
   font-family: ${GeistSans.style.fontFamily};
