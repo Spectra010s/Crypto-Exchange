@@ -17,6 +17,7 @@ import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { Eye, EyeOff, Mail, Lock } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { PasswordStrength, validatePassword } from "@/components/ui/password-strength"
 
 interface AuthFormProps {
   onAuthSuccess: () => void
@@ -29,6 +30,8 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
   const [confirmPassword, setConfirmPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [passwordStrength, setPasswordStrength] = useState(0)
+  const [isPasswordValid, setIsPasswordValid] = useState(false)
   const { toast } = useToast()
 
   const handleEmailAuth = async (e: React.FormEvent) => {
@@ -45,6 +48,17 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
           })
           return
         }
+        
+        const passwordValidation = validatePassword(password)
+        if (!passwordValidation.isValid) {
+          toast({
+            title: "Password Too Weak",
+            description: `Password missing: ${passwordValidation.errors.join(", ")}`,
+            variant: "destructive",
+          })
+          return
+        }
+        
         await createUserWithEmailAndPassword(auth, email, password)
         toast({
           title: "Success",
@@ -73,16 +87,42 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
     setLoading(true)
     try {
       const provider = new GoogleAuthProvider()
-      await signInWithPopup(auth, provider)
+      provider.addScope('email')
+      provider.addScope('profile')
+      
+      // Set custom parameters
+      provider.setCustomParameters({
+        prompt: 'select_account'
+      })
+      
+      const result = await signInWithPopup(auth, provider)
+      console.log('✅ Google Auth Success:', result.user.email)
+      
       toast({
-        title: "Success",
+        title: "Success", 
         description: "Signed in with Google successfully!",
       })
       onAuthSuccess()
     } catch (error: any) {
+      console.error('❌ Google Auth Error:', error)
+      
+      let errorMessage = "Google sign-in failed"
+      
+      if (error.code === 'auth/popup-blocked') {
+        errorMessage = "Popup was blocked. Please allow popups and try again."
+      } else if (error.code === 'auth/popup-closed-by-user') {
+        errorMessage = "Sign-in popup was closed. Please try again."
+      } else if (error.code === 'auth/cancelled-popup-request') {
+        errorMessage = "Another popup is already open. Please close it and try again."
+      } else if (error.code === 'auth/unauthorized-domain') {
+        errorMessage = "This domain is not authorized. Please contact support."
+      } else if (error.message) {
+        errorMessage = error.message
+      }
+      
       toast({
-        title: "Error",
-        description: error.message || "Google sign-in failed",
+        title: "Google Sign-in Error",
+        description: errorMessage,
         variant: "destructive",
       })
     } finally {
@@ -147,6 +187,15 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
                   )}
                 </Button>
               </div>
+              {isSignUp && (
+                <PasswordStrength 
+                  password={password}
+                  onStrengthChange={(strength, isValid) => {
+                    setPasswordStrength(strength)
+                    setIsPasswordValid(isValid)
+                  }}
+                />
+              )}
             </div>
 
             {isSignUp && (
@@ -170,7 +219,7 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
             <Button
               type="submit"
               className="w-full bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800"
-              disabled={loading}
+              disabled={loading || (isSignUp && !isPasswordValid)}
             >
               {loading ? "Loading..." : isSignUp ? "Create Account" : "Sign In"}
             </Button>

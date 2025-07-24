@@ -25,6 +25,7 @@ import {
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/hooks/use-auth"
 import { useTheme } from "next-themes"
+import { PasswordStrength, validatePassword } from "@/components/ui/password-strength"
 
 interface SettingsPageProps {
   onBack?: () => void
@@ -48,6 +49,8 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
   const [confirmPassword, setConfirmPassword] = useState("")
   const [showPasswords, setShowPasswords] = useState(false)
   const [isChangingPassword, setIsChangingPassword] = useState(false)
+  const [passwordStrength, setPasswordStrength] = useState(0)
+  const [isPasswordValid, setIsPasswordValid] = useState(false)
   
   // 2FA state
   const [is2FAEnabled, setIs2FAEnabled] = useState(false)
@@ -137,10 +140,11 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
       return
     }
 
-    if (newPassword.length < 6) {
+    const passwordValidation = validatePassword(newPassword)
+    if (!passwordValidation.isValid) {
       toast({
-        title: "Error",
-        description: "Password must be at least 6 characters",
+        title: "Password Too Weak",
+        description: `Password missing: ${passwordValidation.errors.join(", ")}`,
         variant: "destructive",
       })
       return
@@ -388,6 +392,13 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
               onChange={(e) => setNewPassword(e.target.value)}
               className="mt-1"
             />
+            <PasswordStrength 
+              password={newPassword}
+              onStrengthChange={(strength, isValid) => {
+                setPasswordStrength(strength)
+                setIsPasswordValid(isValid)
+              }}
+            />
           </div>
           
           <div>
@@ -402,7 +413,7 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
           
           <Button 
             onClick={handlePasswordChange}
-            disabled={isChangingPassword}
+            disabled={isChangingPassword || !isPasswordValid || !currentPassword || !confirmPassword}
             className="w-full"
           >
             {isChangingPassword ? "Changing Password..." : "Change Password"}
