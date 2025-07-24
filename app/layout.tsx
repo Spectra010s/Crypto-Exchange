@@ -31,7 +31,19 @@ export default function RootLayout({
           <title>Crypto Exchange App</title>
           <meta name="description" content="A modern crypto exchange application" />
           <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover" />
-          <style>{`
+          
+    <html lang="en" className="h-full">
+      <head>
+        <title>Biaz - Crypto Exchange</title>
+        <meta name="description" content="Biaz - A modern crypto exchange application for seamless trading" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+        <meta name="theme-color" content="#8b5cf6" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="Biaz" />
+        <meta name="format-detection" content="telephone=no" />
+        <link rel="icon" href="/favicon.ico" />
+        <style>{`
 html {
   font-family: ${GeistSans.style.fontFamily};
   --font-sans: ${GeistSans.variable};
@@ -39,7 +51,7 @@ html {
 }
         `}</style>
       </head>
-      <body>
+      <body className="h-full full-viewport overflow-hidden">
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
           <WagmiProvider config={wagmiConfig}>
             <QueryClientProvider client={queryClient}>
@@ -47,8 +59,10 @@ html {
                 <SolanaWalletProvider wallets={wallets} autoConnect>
                   <WalletModalProvider>
                     <WalletProvider>
-                      {children}
-                      <Toaster />
+                      <div className="h-full full-viewport bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 dark:from-slate-900 dark:via-blue-900 dark:to-purple-900 overflow-hidden">
+                        {children}
+                        <Toaster />
+                      </div>
                     </WalletProvider>
                   </WalletModalProvider>
                 </SolanaWalletProvider>
