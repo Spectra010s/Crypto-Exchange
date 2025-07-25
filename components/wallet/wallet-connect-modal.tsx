@@ -1,193 +1,337 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { useConnect } from "wagmi"
-import { WalletReadyState } from "@solana/wallet-adapter-base"
-import { useWallet } from "@solana/wallet-adapter-react"
-import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Wallet, Smartphone, Globe, ExternalLink } from "lucide-react"
-import { useToast } from "@/hooks/use-toast"
+import { useState } from "react";
+import { useConnect } from "wagmi";
+import { WalletReadyState } from "@solana/wallet-adapter-base";
+import { useWallet } from "@solana/wallet-adapter-react";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  Wallet,
+  Smartphone,
+  Globe,
+  ExternalLink,
+  Download,
+  CheckCircle,
+} from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface WalletConnectModalProps {
-  isOpen: boolean
-  onClose: () => void
+  isOpen: boolean;
+  onClose: () => void;
 }
 
-export function WalletConnectModal({ isOpen, onClose }: WalletConnectModalProps) {
-  const [selectedTab, setSelectedTab] = useState<'ethereum' | 'solana'>('ethereum')
-  const { toast } = useToast()
+// Define all supported wallets
+const SUPPORTED_WALLETS = [
+  {
+    id: "metamask",
+    name: "MetaMask",
+    icon: "🦊",
+    description: "Most popular Ethereum wallet",
+    type: "ethereum",
+    url: "https://metamask.io/download/",
+    popular: true,
+  },
+  {
+    id: "phantom",
+    name: "Phantom",
+    icon: "👻",
+    description: "Most popular Solana wallet",
+    type: "solana",
+    url: "https://phantom.app/",
+    popular: true,
+  },
+  {
+    id: "zerion",
+    name: "Zerion",
+    icon: "🔷",
+    description: "DeFi wallet for all chains",
+    type: "ethereum",
+    url: "https://zerion.io/",
+    popular: false,
+  },
+  {
+    id: "bitget",
+    name: "Bitget Wallet",
+    icon: "🟡",
+    description: "Multi-chain wallet",
+    type: "ethereum",
+    url: "https://web3.bitget.com/",
+    popular: false,
+  },
+  {
+    id: "walletconnect",
+    name: "WalletConnect",
+    icon: "🔗",
+    description: "Connect any mobile wallet",
+    type: "both",
+    url: "https://walletconnect.com/",
+    popular: false,
+  },
+  {
+    id: "solflare",
+    name: "Solflare",
+    icon: "☀️",
+    description: "Feature-rich Solana wallet",
+    type: "solana",
+    url: "https://solflare.com/",
+    popular: false,
+  },
+  {
+    id: "coinbase",
+    name: "Coinbase Wallet",
+    icon: "🔵",
+    description: "Secure crypto wallet",
+    type: "ethereum",
+    url: "https://wallet.coinbase.com/",
+    popular: false,
+  },
+];
+
+export function WalletConnectModal({
+  isOpen,
+  onClose,
+}: WalletConnectModalProps) {
+  const { toast } = useToast();
 
   // Ethereum wallet connections
-  const { connectors, connect: connectEthereum, isPending } = useConnect()
+  const { connectors, connect: connectEthereum, isPending } = useConnect();
 
   // Solana wallet connections
-  const { wallets, select: selectSolana } = useWallet()
+  const { wallets, select: selectSolana } = useWallet();
 
-  const handleEthereumConnect = async (connector: any) => {
+  const handleWalletConnect = async (wallet: any) => {
     try {
-      await connectEthereum({ connector })
-      onClose()
+      if (wallet.type === "ethereum" || wallet.type === "both") {
+        // Handle Ethereum wallet connection
+        const connector = connectors.find(
+          (c) =>
+            c.name.toLowerCase().includes(wallet.id) ||
+            c.name.toLowerCase().includes(wallet.name.toLowerCase())
+        );
+        if (connector) {
+          await connectEthereum({ connector });
+        } else {
+          // Fallback for WalletConnect
+          const wcConnector = connectors.find(
+            (c) => c.name === "WalletConnect"
+          );
+          if (wcConnector) {
+            await connectEthereum({ connector: wcConnector });
+          }
+        }
+      } else if (wallet.type === "solana") {
+        // Handle Solana wallet connection
+        const solanaWallet = wallets.find(
+          (w) =>
+            w.adapter.name.toLowerCase().includes(wallet.id) ||
+            w.adapter.name.toLowerCase().includes(wallet.name.toLowerCase())
+        );
+        if (solanaWallet) {
+          selectSolana(solanaWallet.adapter.name);
+        }
+      }
+
+      onClose();
       toast({
         title: "Success",
-        description: "Ethereum wallet connected successfully",
-      })
+        description: `${wallet.name} connected successfully`,
+      });
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to connect Ethereum wallet",
+        description: `Failed to connect ${wallet.name}`,
         variant: "destructive",
-      })
+      });
     }
-  }
+  };
 
-  const handleSolanaConnect = async (walletName: string) => {
-    try {
-      selectSolana(walletName)
-      onClose()
-      toast({
-        title: "Success",
-        description: "Solana wallet selected successfully",
-      })
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to connect Solana wallet",
-        variant: "destructive",
-      })
+  const getWalletStatus = (wallet: any) => {
+    if (wallet.type === "ethereum" || wallet.type === "both") {
+      const connector = connectors.find(
+        (c) =>
+          c.name.toLowerCase().includes(wallet.id) ||
+          c.name.toLowerCase().includes(wallet.name.toLowerCase())
+      );
+      return connector ? "available" : "not-detected";
+    } else if (wallet.type === "solana") {
+      const solanaWallet = wallets.find(
+        (w) =>
+          w.adapter.name.toLowerCase().includes(wallet.id) ||
+          w.adapter.name.toLowerCase().includes(wallet.name.toLowerCase())
+      );
+      if (solanaWallet) {
+        switch (solanaWallet.readyState) {
+          case WalletReadyState.Installed:
+            return "available";
+          case WalletReadyState.NotDetected:
+            return "not-detected";
+          case WalletReadyState.Loadable:
+            return "available";
+          case WalletReadyState.Unsupported:
+            return "unsupported";
+          default:
+            return "unknown";
+        }
+      }
+      return "not-detected";
     }
-  }
+    return "unknown";
+  };
 
-  const getWalletIcon = (walletName: string) => {
-    const name = walletName.toLowerCase()
-    if (name.includes('metamask')) return '🦊'
-    if (name.includes('coinbase')) return '🔵'
-    if (name.includes('walletconnect')) return '🔗'
-    if (name.includes('phantom')) return '👻'
-    if (name.includes('solflare')) return '☀️'
-    return '💼'
-  }
-
-  const getReadyStateText = (readyState: WalletReadyState) => {
-    switch (readyState) {
-      case WalletReadyState.Installed:
-        return { text: "Installed", color: "bg-green-100 text-green-800" }
-      case WalletReadyState.NotDetected:
-        return { text: "Not Detected", color: "bg-gray-100 text-gray-800" }
-      case WalletReadyState.Loadable:
-        return { text: "Loadable", color: "bg-blue-100 text-blue-800" }
-      case WalletReadyState.Unsupported:
-        return { text: "Unsupported", color: "bg-red-100 text-red-800" }
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "available":
+        return (
+          <Badge variant="secondary" className="bg-green-100 text-green-800">
+            Available
+          </Badge>
+        );
+      case "not-detected":
+        return (
+          <Badge variant="secondary" className="bg-gray-100 text-gray-800">
+            Install Required
+          </Badge>
+        );
+      case "unsupported":
+        return (
+          <Badge variant="secondary" className="bg-red-100 text-red-800">
+            Unsupported
+          </Badge>
+        );
       default:
-        return { text: "Unknown", color: "bg-gray-100 text-gray-800" }
+        return (
+          <Badge variant="secondary" className="bg-gray-100 text-gray-800">
+            Unknown
+          </Badge>
+        );
     }
-  }
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md mx-4">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Wallet className="w-5 h-5" />
+          <DialogTitle className="flex items-center gap-2 text-xl">
+            <Wallet className="w-6 h-6" />
             Connect Wallet
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* Wallet Type Tabs */}
-          <div className="flex space-x-1 bg-gray-100 rounded-lg p-1">
-            <Button
-              variant={selectedTab === 'ethereum' ? 'default' : 'ghost'}
-              size="sm"
-              className="flex-1"
-              onClick={() => setSelectedTab('ethereum')}
-            >
-              <Globe className="w-4 h-4 mr-2" />
-              Ethereum
-            </Button>
-            <Button
-              variant={selectedTab === 'solana' ? 'default' : 'ghost'}
-              size="sm"
-              className="flex-1"
-              onClick={() => setSelectedTab('solana')}
-            >
-              ☀️ Solana
-            </Button>
-          </div>
-
-          {/* Ethereum Wallets */}
-          {selectedTab === 'ethereum' && (
+          {/* Popular Wallets Section */}
+          <div>
+            <h3 className="text-sm font-semibold text-gray-700 mb-3">
+              Popular Wallets
+            </h3>
             <div className="space-y-2">
-              <h3 className="text-sm font-medium text-gray-700">Choose Ethereum Wallet</h3>
-              {connectors.map((connector) => (
-                <Card key={connector.uid} className="cursor-pointer hover:bg-gray-50 transition-colors">
-                  <CardContent className="p-3">
-                    <Button
-                      variant="ghost"
-                      className="w-full justify-start h-auto p-0"
-                      onClick={() => handleEthereumConnect(connector)}
-                      disabled={isPending}
-                    >
-                      <div className="flex items-center space-x-3 w-full">
-                        <span className="text-2xl">{getWalletIcon(connector.name)}</span>
-                        <div className="flex-1 text-left">
-                          <p className="font-medium">{connector.name}</p>
-                          <p className="text-sm text-gray-500">
-                            {connector.name === 'WalletConnect' && 'Scan QR code with your mobile wallet'}
-                            {connector.name === 'MetaMask' && 'Connect using MetaMask browser extension'}
-                            {connector.name === 'Coinbase Wallet' && 'Connect using Coinbase Wallet'}
-                            {connector.name === 'Injected' && 'Connect using browser wallet'}
-                          </p>
-                        </div>
-                        <ExternalLink className="w-4 h-4 text-gray-400" />
-                      </div>
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-
-          {/* Solana Wallets */}
-          {selectedTab === 'solana' && (
-            <div className="space-y-2">
-              <h3 className="text-sm font-medium text-gray-700">Choose Solana Wallet</h3>
-              {wallets.map((wallet) => {
-                const readyState = getReadyStateText(wallet.readyState)
+              {SUPPORTED_WALLETS.filter((w) => w.popular).map((wallet) => {
+                const status = getWalletStatus(wallet);
                 return (
-                  <Card key={wallet.adapter.name} className="cursor-pointer hover:bg-gray-50 transition-colors">
-                    <CardContent className="p-3">
+                  <Card
+                    key={wallet.id}
+                    className="cursor-pointer hover:bg-gray-50 transition-all duration-200 border-2 hover:border-purple-200"
+                  >
+                    <CardContent className="p-4">
                       <Button
                         variant="ghost"
                         className="w-full justify-start h-auto p-0"
-                        onClick={() => handleSolanaConnect(wallet.adapter.name)}
-                        disabled={wallet.readyState === WalletReadyState.Unsupported}
+                        onClick={() => handleWalletConnect(wallet)}
+                        disabled={status === "unsupported" || isPending}
                       >
                         <div className="flex items-center space-x-3 w-full">
-                          <span className="text-2xl">{getWalletIcon(wallet.adapter.name)}</span>
+                          <div className="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-xl">
+                            <span className="text-2xl">{wallet.icon}</span>
+                          </div>
                           <div className="flex-1 text-left">
-                            <div className="flex items-center gap-2">
-                              <p className="font-medium">{wallet.adapter.name}</p>
-                              <Badge variant="secondary" className={readyState.color}>
-                                {readyState.text}
-                              </Badge>
+                            <div className="flex items-center gap-2 mb-1">
+                              <p className="font-semibold text-base">
+                                {wallet.name}
+                              </p>
+                              {getStatusBadge(status)}
                             </div>
-                            <p className="text-sm text-gray-500">
-                              {wallet.adapter.name === 'Phantom' && 'Most popular Solana wallet'}
-                              {wallet.adapter.name === 'Solflare' && 'Feature-rich Solana wallet'}
-                              {wallet.adapter.name.includes('WalletConnect') && 'Connect with mobile app'}
+                            <p className="text-sm text-gray-600">
+                              {wallet.description}
                             </p>
                           </div>
-                          {wallet.readyState === WalletReadyState.NotDetected ? (
+                          {status === "not-detected" ? (
                             <Button
                               size="sm"
                               variant="outline"
                               onClick={(e) => {
-                                e.stopPropagation()
-                                window.open(wallet.adapter.url, '_blank')
+                                e.stopPropagation();
+                                window.open(wallet.url, "_blank");
                               }}
+                              className="flex items-center gap-1"
+                            >
+                              <Download className="w-3 h-3" />
+                              Install
+                            </Button>
+                          ) : status === "available" ? (
+                            <CheckCircle className="w-5 h-5 text-green-500" />
+                          ) : (
+                            <ExternalLink className="w-4 h-4 text-gray-400" />
+                          )}
+                        </div>
+                      </Button>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* All Wallets Section */}
+          <div>
+            <h3 className="text-sm font-semibold text-gray-700 mb-3">
+              All Wallets
+            </h3>
+            <div className="space-y-2">
+              {SUPPORTED_WALLETS.filter((w) => !w.popular).map((wallet) => {
+                const status = getWalletStatus(wallet);
+                return (
+                  <Card
+                    key={wallet.id}
+                    className="cursor-pointer hover:bg-gray-50 transition-all duration-200"
+                  >
+                    <CardContent className="p-3">
+                      <Button
+                        variant="ghost"
+                        className="w-full justify-start h-auto p-0"
+                        onClick={() => handleWalletConnect(wallet)}
+                        disabled={status === "unsupported" || isPending}
+                      >
+                        <div className="flex items-center space-x-3 w-full">
+                          <div className="flex items-center justify-center w-10 h-10 bg-gray-100 rounded-lg">
+                            <span className="text-xl">{wallet.icon}</span>
+                          </div>
+                          <div className="flex-1 text-left">
+                            <div className="flex items-center gap-2">
+                              <p className="font-medium text-sm">
+                                {wallet.name}
+                              </p>
+                              {getStatusBadge(status)}
+                            </div>
+                            <p className="text-xs text-gray-500">
+                              {wallet.description}
+                            </p>
+                          </div>
+                          {status === "not-detected" ? (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                window.open(wallet.url, "_blank");
+                              }}
+                              className="text-xs"
                             >
                               Install
                             </Button>
@@ -198,16 +342,17 @@ export function WalletConnectModal({ isOpen, onClose }: WalletConnectModalProps)
                       </Button>
                     </CardContent>
                   </Card>
-                )
+                );
               })}
             </div>
-          )}
+          </div>
 
-          <div className="text-xs text-gray-500 text-center pt-2">
-            By connecting a wallet, you agree to our Terms of Service and Privacy Policy
+          <div className="text-xs text-gray-500 text-center pt-4 border-t">
+            By connecting a wallet, you agree to our Terms of Service and
+            Privacy Policy
           </div>
         </div>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

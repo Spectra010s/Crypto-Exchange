@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
+import { useState, useEffect } from "react";
 import {
   Home,
   TrendingUp,
@@ -24,92 +24,138 @@ import {
   Phone,
   Camera,
   Upload,
-} from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Switch } from "@/components/ui/switch"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { AuthForm } from "@/components/auth/auth-form"
-import { AuthProvider, useAuth } from "@/hooks/use-auth"
-import { fetchCryptocurrencies, type CoinData } from "@/lib/coingecko"
-import { useToast } from "@/hooks/use-toast"
-import { useWalletContext } from "@/hooks/use-wallet"
-import { WalletConnectModal } from "@/components/wallet/wallet-connect-modal"
-import { AddFundsModal } from "@/components/wallet/add-funds-modal"
-import { SendTransactionModal } from "@/components/wallet/send-transaction-modal"
-import { SettingsPage } from "@/components/settings/settings-page"
-import { Logo } from "@/components/ui/logo"
-import { BINANCE_BUY_URL, BINANCE_SELL_URL } from "@/lib/web3-config"
+  History,
+  Image as ImageIcon,
+  Globe,
+  ChevronDown,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { AuthForm } from "@/components/auth/auth-form";
+import { AuthProvider, useAuth } from "@/hooks/use-auth";
+import { fetchCryptocurrencies, type CoinData } from "@/lib/coingecko";
+import { useToast } from "@/hooks/use-toast";
+import { useWalletContext } from "@/hooks/use-wallet";
+import { WalletConnectModal } from "@/components/wallet/wallet-connect-modal";
+import { AddFundsModal } from "@/components/wallet/add-funds-modal";
+import { SendTransactionModal } from "@/components/wallet/send-transaction-modal";
+import { SettingsPage } from "@/components/settings/settings-page";
+import { Logo } from "@/components/ui/logo";
+import { BINANCE_BUY_URL, BINANCE_SELL_URL } from "@/lib/web3-config";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 // Mock transactions data
 const transactions = [
-  { id: 1, type: "buy", coin: "BTC", amount: 0.025, value: 1081.25, date: "2024-01-15" },
-  { id: 2, type: "sell", coin: "ETH", amount: 1.5, value: 4021.13, date: "2024-01-14" },
-  { id: 3, type: "buy", coin: "SOL", amount: 25, value: 2461.25, date: "2024-01-13" },
-  { id: 4, type: "send", coin: "BTC", amount: 0.01, value: 432.5, date: "2024-01-12" },
-]
+  {
+    id: 1,
+    type: "buy",
+    coin: "BTC",
+    amount: 0.025,
+    value: 1081.25,
+    date: "2024-01-15",
+  },
+  {
+    id: 2,
+    type: "sell",
+    coin: "ETH",
+    amount: 1.5,
+    value: 4021.13,
+    date: "2024-01-14",
+  },
+  {
+    id: 3,
+    type: "buy",
+    coin: "SOL",
+    amount: 25,
+    value: 2461.25,
+    date: "2024-01-13",
+  },
+  {
+    id: 4,
+    type: "send",
+    coin: "BTC",
+    amount: 0.01,
+    value: 432.5,
+    date: "2024-01-12",
+  },
+];
 
 function CryptoExchangeApp() {
-  const { user, loading, logout, updateProfile } = useAuth()
-  const { walletData, disconnectWallet, refreshBalances } = useWalletContext()
-  const [activeTab, setActiveTab] = useState("home")
-  const [activeSubTab, setActiveSubTab] = useState("")
-  const [balanceVisible, setBalanceVisible] = useState(true)
-  const [marketData, setMarketData] = useState<CoinData[]>([])
-  const [loadingMarketData, setLoadingMarketData] = useState(true)
-  const [walletModalOpen, setWalletModalOpen] = useState(false)
-  const [addFundsModalOpen, setAddFundsModalOpen] = useState(false)
-  const [sendModalOpen, setSendModalOpen] = useState(false)
-  const [editingUsername, setEditingUsername] = useState(false)
-  const [newUsername, setNewUsername] = useState("")
-  const [profilePicModalOpen, setProfilePicModalOpen] = useState(false)
-  const [pushNotifications, setPushNotifications] = useState(false)
-  const [emailNotifications, setEmailNotifications] = useState(true)
-  const [transactionNotifications, setTransactionNotifications] = useState(true)
-  const { toast } = useToast()
+  const { user, loading, logout, updateProfile } = useAuth();
+  const { walletData, disconnectWallet, refreshBalances } = useWalletContext();
+  const [activeTab, setActiveTab] = useState("home");
+  const [activeSubTab, setActiveSubTab] = useState("");
+  const [balanceVisible, setBalanceVisible] = useState(true);
+  const [marketData, setMarketData] = useState<CoinData[]>([]);
+  const [loadingMarketData, setLoadingMarketData] = useState(true);
+  const [walletModalOpen, setWalletModalOpen] = useState(false);
+  const [addFundsModalOpen, setAddFundsModalOpen] = useState(false);
+  const [sendModalOpen, setSendModalOpen] = useState(false);
+  const [editingUsername, setEditingUsername] = useState(false);
+  const [newUsername, setNewUsername] = useState("");
+  const [profilePicModalOpen, setProfilePicModalOpen] = useState(false);
+  const [pushNotifications, setPushNotifications] = useState(false);
+  const [emailNotifications, setEmailNotifications] = useState(true);
+  const [transactionNotifications, setTransactionNotifications] =
+    useState(true);
+  const { toast } = useToast();
 
   useEffect(() => {
     const loadMarketData = async () => {
       try {
-        setLoadingMarketData(true)
-        const data = await fetchCryptocurrencies(5)
-        setMarketData(data)
+        setLoadingMarketData(true);
+        const data = await fetchCryptocurrencies(5);
+        setMarketData(data);
       } catch (error) {
         toast({
           title: "Error",
           description: "Failed to load market data",
           variant: "destructive",
-        })
+        });
       } finally {
-        setLoadingMarketData(false)
+        setLoadingMarketData(false);
       }
-    }
+    };
 
     if (user) {
-      loadMarketData()
-      setNewUsername(user.displayName || "")
+      loadMarketData();
+      setNewUsername(user.displayName || "");
     }
-  }, [user, toast])
+  }, [user, toast]);
 
   const handleLogout = async () => {
     try {
-      await logout()
+      await logout();
       toast({
         title: "Success",
         description: "Signed out successfully",
-      })
+      });
     } catch (error) {
       toast({
         title: "Error",
         description: "Failed to sign out",
         variant: "destructive",
-      })
+      });
     }
-  }
+  };
 
   const handleUsernameUpdate = async () => {
     if (!newUsername.trim()) {
@@ -117,53 +163,62 @@ function CryptoExchangeApp() {
         title: "Error",
         description: "Username cannot be empty",
         variant: "destructive",
-      })
-      return
+      });
+      return;
     }
 
     try {
-      await updateProfile({ displayName: newUsername.trim() })
-      setEditingUsername(false)
+      await updateProfile({ displayName: newUsername.trim() });
+      setEditingUsername(false);
       toast({
         title: "Success",
         description: "Username updated successfully",
-      })
+      });
     } catch (error) {
       toast({
         title: "Error",
         description: "Failed to update username",
         variant: "destructive",
-      })
+      });
     }
-  }
+  };
 
   const handleProfilePicUpload = async () => {
     // Mock profile picture upload
     toast({
       title: "Coming Soon",
       description: "Profile picture upload will be available soon",
-    })
-    setProfilePicModalOpen(false)
-  }
+    });
+    setProfilePicModalOpen(false);
+  };
 
   const requestNotificationPermission = async () => {
     if ("Notification" in window) {
-      const permission = await Notification.requestPermission()
+      const permission = await Notification.requestPermission();
       if (permission === "granted") {
-        setPushNotifications(true)
+        setPushNotifications(true);
         toast({
           title: "Success",
           description: "Push notifications enabled",
-        })
+        });
       } else {
         toast({
           title: "Permission Denied",
           description: "Please enable notifications in your browser settings",
           variant: "destructive",
-        })
+        });
       }
     }
-  }
+  };
+
+  // Add WhatsApp integration function
+  const openWhatsApp = (action: "buy" | "sell") => {
+    const phone = "09030700024";
+    const message =
+      action === "buy" ? "I want to buy crypto" : "I want to sell crypto";
+    const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+    window.open(url, "_blank");
+  };
 
   if (loading) {
     return (
@@ -173,7 +228,7 @@ function CryptoExchangeApp() {
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
         </div>
       </div>
-    )
+    );
   }
 
   if (!user) {
@@ -181,7 +236,7 @@ function CryptoExchangeApp() {
       <div className="h-full full-viewport">
         <AuthForm onAuthSuccess={() => {}} />
       </div>
-    )
+    );
   }
 
   const HomeScreen = () => (
@@ -195,7 +250,11 @@ function CryptoExchangeApp() {
           onClick={() => setBalanceVisible(!balanceVisible)}
           className="text-gray-600 touch-target"
         >
-          {balanceVisible ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
+          {balanceVisible ? (
+            <Eye className="w-5 h-5" />
+          ) : (
+            <EyeOff className="w-5 h-5" />
+          )}
         </Button>
       </div>
 
@@ -208,31 +267,39 @@ function CryptoExchangeApp() {
                 Welcome back, {user.displayName || user.email?.split("@")[0]}!
               </h1>
               <p className="text-purple-100 text-sm sm:text-base mt-2">
-                {walletData.isConnected ? 'Your Web3 portfolio is ready!' : 'Connect your wallet to start trading!'}
+                {walletData.isConnected
+                  ? "Your Web3 portfolio is ready!"
+                  : "Connect your wallet to start trading!"}
               </p>
             </div>
-            
+
             <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
               <div className="flex-1">
-                <p className="text-purple-200 text-xs sm:text-sm">Portfolio Value</p>
+                <p className="text-purple-200 text-xs sm:text-sm">
+                  Portfolio Value
+                </p>
                 <p className="text-2xl sm:text-3xl font-bold mt-1">
-                  {walletData.isConnected ? (
-                    balanceVisible ? `$${walletData.totalValue.toFixed(2)}` : "••••••••"
-                  ) : (
-                    "Connect Wallet"
-                  )}
+                  {walletData.isConnected
+                    ? balanceVisible
+                      ? `$${walletData.totalValue.toFixed(2)}`
+                      : "••••••••"
+                    : "Connect Wallet"}
                 </p>
               </div>
-              
+
               <div className="text-left sm:text-right">
-                <p className="text-purple-200 text-xs sm:text-sm">Wallet Status</p>
+                <p className="text-purple-200 text-xs sm:text-sm">
+                  Wallet Status
+                </p>
                 <div className="mt-1">
                   {walletData.isConnected ? (
-                    <span className="text-green-300 text-sm sm:text-xl font-semibold">✓ Connected</span>
+                    <span className="text-green-300 text-sm sm:text-xl font-semibold">
+                      ✓ Connected
+                    </span>
                   ) : (
-                    <Button 
-                      size="sm" 
-                      variant="secondary" 
+                    <Button
+                      size="sm"
+                      variant="secondary"
                       onClick={() => setWalletModalOpen(true)}
                       className="text-purple-600 touch-target"
                     >
@@ -249,31 +316,35 @@ function CryptoExchangeApp() {
       {/* Quick Actions - Mobile-First Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mx-4">
         <Card className="mobile-card hover:shadow-lg transition-all duration-300 cursor-pointer group">
-          <CardContent 
+          <CardContent
             className="mobile-container text-center"
-            onClick={() => window.open(BINANCE_BUY_URL, '_blank')}
+            onClick={() => openWhatsApp("buy")}
           >
             <div className="w-12 h-12 sm:w-14 sm:h-14 gradient-green rounded-full flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
               <ArrowDownLeft className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
             </div>
-            <h3 className="font-semibold text-green-800 text-sm sm:text-base">Buy Crypto</h3>
+            <h3 className="font-semibold text-green-800 text-sm sm:text-base">
+              Buy Crypto
+            </h3>
             <p className="text-xs sm:text-sm text-green-600 mt-1 flex items-center justify-center gap-1">
-              Via Binance <ExternalLink className="w-3 h-3" />
+              Contact Support <ExternalLink className="w-3 h-3" />
             </p>
           </CardContent>
         </Card>
 
         <Card className="mobile-card hover:shadow-lg transition-all duration-300 cursor-pointer group">
-          <CardContent 
+          <CardContent
             className="mobile-container text-center"
-            onClick={() => window.open(BINANCE_SELL_URL, '_blank')}
+            onClick={() => openWhatsApp("sell")}
           >
             <div className="w-12 h-12 sm:w-14 sm:h-14 gradient-red rounded-full flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
               <ArrowUpRight className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
             </div>
-            <h3 className="font-semibold text-red-800 text-sm sm:text-base">Sell Crypto</h3>
+            <h3 className="font-semibold text-red-800 text-sm sm:text-base">
+              Sell Crypto
+            </h3>
             <p className="text-xs sm:text-sm text-red-600 mt-1 flex items-center justify-center gap-1">
-              Via Binance <ExternalLink className="w-3 h-3" />
+              Contact Support <ExternalLink className="w-3 h-3" />
             </p>
           </CardContent>
         </Card>
@@ -282,30 +353,45 @@ function CryptoExchangeApp() {
       {/* Wallet Overview - Mobile-Optimized */}
       <Card className="mobile-card shadow-lg mx-4">
         <CardHeader className="mobile-container pb-2">
-          <CardTitle className="text-base sm:text-lg">Wallet Overview</CardTitle>
+          <CardTitle className="text-base sm:text-lg">
+            Wallet Overview
+          </CardTitle>
         </CardHeader>
         <CardContent className="mobile-container pt-0">
           {walletData.isConnected ? (
             <div className="grid grid-cols-3 gap-3 sm:gap-4 text-center">
               <div>
-                <p className="text-xl sm:text-2xl font-bold text-purple-600">{walletData.balances.length}</p>
-                <p className="text-xs sm:text-sm text-gray-600 mt-1">Holdings</p>
+                <p className="text-xl sm:text-2xl font-bold text-purple-600">
+                  {walletData.balances.length}
+                </p>
+                <p className="text-xs sm:text-sm text-gray-600 mt-1">
+                  Holdings
+                </p>
               </div>
               <div>
                 <p className="text-xl sm:text-2xl font-bold text-green-600">
-                  {walletData.type === 'ethereum' ? '🌐' : '☀️'}
+                  {walletData.type === "ethereum" ? "🌐" : "☀️"}
                 </p>
-                <p className="text-xs sm:text-sm text-gray-600 mt-1 capitalize">{walletData.type}</p>
+                <p className="text-xs sm:text-sm text-gray-600 mt-1 capitalize">
+                  {walletData.type}
+                </p>
               </div>
               <div>
-                <p className="text-xl sm:text-2xl font-bold text-blue-600 capitalize">{walletData.network}</p>
+                <p className="text-xl sm:text-2xl font-bold text-blue-600 capitalize">
+                  {walletData.network}
+                </p>
                 <p className="text-xs sm:text-sm text-gray-600 mt-1">Network</p>
               </div>
             </div>
           ) : (
             <div className="text-center py-4 sm:py-6">
-              <p className="text-gray-500 mb-4 text-sm sm:text-base">Connect your wallet to see your portfolio</p>
-              <Button onClick={() => setWalletModalOpen(true)} className="touch-target">
+              <p className="text-gray-500 mb-4 text-sm sm:text-base">
+                Connect your wallet to see your portfolio
+              </p>
+              <Button
+                onClick={() => setWalletModalOpen(true)}
+                className="touch-target"
+              >
                 <Wallet className="w-4 h-4 mr-2" />
                 Connect Wallet
               </Button>
@@ -313,23 +399,26 @@ function CryptoExchangeApp() {
           )}
         </CardContent>
       </Card>
-      
+
       <div className="pb-20"></div>
     </div>
-  )
+  );
 
   const MarketScreen = () => (
     <div className="space-y-4 sm:space-y-6 animate-fade-in h-full overflow-y-auto scrollbar-hide">
       <div className="flex items-center justify-between mobile-container">
         <h1 className="text-xl sm:text-2xl font-bold">Markets</h1>
         <div className="flex items-center gap-2">
-          <Badge variant="secondary" className="bg-purple-100 text-purple-700 text-xs sm:text-sm">
+          <Badge
+            variant="secondary"
+            className="bg-purple-100 text-purple-700 text-xs sm:text-sm"
+          >
             Live
           </Badge>
           <Button
             variant="outline"
             size="sm"
-            onClick={() => window.open('https://coinmarketcap.com', '_blank')}
+            onClick={() => window.open("https://coinmarketcap.com", "_blank")}
             className="text-xs px-2 py-1"
           >
             See More <ExternalLink className="w-3 h-3 ml-1" />
@@ -362,26 +451,45 @@ function CryptoExchangeApp() {
       ) : (
         <div className="space-y-3 mobile-container">
           {marketData.map((coin) => (
-            <Card key={coin.id} className="mobile-card hover:shadow-lg transition-all duration-300 animate-slide-up">
+            <Card
+              key={coin.id}
+              className="mobile-card hover:shadow-lg transition-all duration-300 animate-slide-up"
+            >
               <CardContent className="p-3 sm:p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
                     <div className="w-10 h-10 sm:w-12 sm:h-12 bg-purple-100 rounded-full flex items-center justify-center overflow-hidden">
                       {coin.image ? (
-                        <img src={coin.image} alt={coin.symbol} className="w-8 h-8 sm:w-10 sm:h-10 rounded-full" />
+                        <img
+                          src={coin.image}
+                          alt={coin.symbol}
+                          className="w-8 h-8 sm:w-10 sm:h-10 rounded-full"
+                        />
                       ) : (
-                        <span className="text-lg sm:text-xl font-bold text-purple-600">{coin.symbol.charAt(0).toUpperCase()}</span>
+                        <span className="text-lg sm:text-xl font-bold text-purple-600">
+                          {coin.symbol.charAt(0).toUpperCase()}
+                        </span>
                       )}
                     </div>
                     <div>
-                      <h3 className="font-semibold text-sm sm:text-base">{coin.symbol.toUpperCase()}</h3>
-                      <p className="text-xs sm:text-sm text-gray-600">{coin.name}</p>
+                      <h3 className="font-semibold text-sm sm:text-base">
+                        {coin.symbol.toUpperCase()}
+                      </h3>
+                      <p className="text-xs sm:text-sm text-gray-600">
+                        {coin.name}
+                      </p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="font-semibold text-sm sm:text-base">${coin.current_price.toLocaleString()}</p>
+                    <p className="font-semibold text-sm sm:text-base">
+                      ${coin.current_price.toLocaleString()}
+                    </p>
                     <p
-                      className={`text-xs sm:text-sm ${coin.price_change_percentage_24h >= 0 ? "text-green-600" : "text-red-600"}`}
+                      className={`text-xs sm:text-sm ${
+                        coin.price_change_percentage_24h >= 0
+                          ? "text-green-600"
+                          : "text-red-600"
+                      }`}
                     >
                       {coin.price_change_percentage_24h >= 0 ? "+" : ""}
                       {coin.price_change_percentage_24h.toFixed(2)}%
@@ -393,10 +501,10 @@ function CryptoExchangeApp() {
           ))}
         </div>
       )}
-      
+
       <div className="pb-20"></div>
     </div>
-  )
+  );
 
   const WalletScreen = () => (
     <div className="space-y-4 sm:space-y-6 animate-fade-in h-full overflow-y-auto scrollbar-hide">
@@ -408,9 +516,42 @@ function CryptoExchangeApp() {
           onClick={() => setBalanceVisible(!balanceVisible)}
           className="text-gray-600 touch-target"
         >
-          {balanceVisible ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
+          {balanceVisible ? (
+            <Eye className="w-5 h-5" />
+          ) : (
+            <EyeOff className="w-5 h-5" />
+          )}
         </Button>
       </div>
+
+      {/* Network Selector */}
+      {walletData.isConnected && (
+        <div className="mobile-container">
+          <Card className="mobile-card shadow-lg">
+            <CardHeader className="mobile-container pb-2">
+              <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                <Globe className="w-4 h-4 sm:w-5 sm:h-5" />
+                Network
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="mobile-container pt-0">
+              <Select defaultValue={walletData.network || "ethereum"}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select network" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ethereum">Ethereum</SelectItem>
+                  <SelectItem value="polygon">Polygon</SelectItem>
+                  <SelectItem value="arbitrum">Arbitrum</SelectItem>
+                  <SelectItem value="optimism">Optimism</SelectItem>
+                  <SelectItem value="base">Base</SelectItem>
+                  <SelectItem value="solana">Solana</SelectItem>
+                </SelectContent>
+              </Select>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Balance Card - Mobile-Optimized */}
       <div className="mobile-container">
@@ -420,9 +561,9 @@ function CryptoExchangeApp() {
               <div className="flex items-center justify-between">
                 <p className="text-purple-200 text-sm">Total Balance</p>
                 {walletData.isConnected && (
-                  <Button 
-                    size="sm" 
-                    variant="ghost" 
+                  <Button
+                    size="sm"
+                    variant="ghost"
                     onClick={refreshBalances}
                     className="text-purple-200 hover:text-white hover:bg-purple-500 text-xs touch-target"
                   >
@@ -430,24 +571,27 @@ function CryptoExchangeApp() {
                   </Button>
                 )}
               </div>
-              
+
               <p className="text-3xl sm:text-4xl font-bold">
-                {walletData.isConnected ? (
-                  balanceVisible ? `$${walletData.totalValue.toFixed(2)}` : "••••••••"
-                ) : (
-                  "Connect Wallet"
-                )}
+                {walletData.isConnected
+                  ? balanceVisible
+                    ? `$${walletData.totalValue.toFixed(2)}`
+                    : "••••••••"
+                  : "Connect Wallet"}
               </p>
-              
+
               {walletData.isConnected && (
                 <div className="text-xs sm:text-sm text-purple-200 space-y-1">
-                  <p>Wallet: {walletData.address?.slice(0, 6)}...{walletData.address?.slice(-4)}</p>
+                  <p>
+                    Wallet: {walletData.address?.slice(0, 6)}...
+                    {walletData.address?.slice(-4)}
+                  </p>
                   <p>Network: {walletData.network}</p>
                 </div>
               )}
-              
+
               <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
-                <Button 
+                <Button
                   className="flex-1 bg-white text-purple-600 hover:bg-gray-100 touch-target"
                   onClick={() => setAddFundsModalOpen(true)}
                   disabled={!walletData.isConnected}
@@ -474,51 +618,86 @@ function CryptoExchangeApp() {
       <div className="mobile-container">
         <Card className="mobile-card shadow-lg">
           <CardHeader className="mobile-container pb-2">
-            <CardTitle className="text-base sm:text-lg">Your Holdings</CardTitle>
+            <CardTitle className="text-base sm:text-lg">
+              Your Holdings
+            </CardTitle>
           </CardHeader>
           <CardContent className="mobile-container pt-0 space-y-3">
             {walletData.isConnected ? (
               walletData.balances.length > 0 ? (
                 walletData.balances.map((balance) => (
-                  <div key={balance.symbol} className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-gray-800 animate-slide-up">
+                  <div
+                    key={balance.symbol}
+                    className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-gray-800 animate-slide-up"
+                  >
                     <div className="flex items-center space-x-3">
                       <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center bg-purple-100">
                         {balance.image ? (
-                          <img src={balance.image} alt={balance.symbol} className="w-6 h-6 sm:w-8 sm:h-8 rounded-full" />
+                          <img
+                            src={balance.image}
+                            alt={balance.symbol}
+                            className="w-6 h-6 sm:w-8 sm:h-8 rounded-full"
+                          />
                         ) : (
                           <span className="text-sm sm:text-xl">
-                            {balance.symbol === 'ETH' ? '🌐' : 
-                             balance.symbol === 'SOL' ? '☀️' : 
-                             balance.symbol === 'MATIC' ? '🟣' : 
-                             balance.symbol === 'ARB' ? '🔵' : 
-                             balance.symbol === 'OP' ? '🔴' : '💎'}
+                            {balance.symbol === "ETH"
+                              ? "🌐"
+                              : balance.symbol === "SOL"
+                              ? "☀️"
+                              : balance.symbol === "MATIC"
+                              ? "🟣"
+                              : balance.symbol === "ARB"
+                              ? "🔵"
+                              : balance.symbol === "OP"
+                              ? "🔴"
+                              : "💎"}
                           </span>
                         )}
                       </div>
                       <div>
-                        <p className="font-semibold text-sm sm:text-base">{balance.symbol}</p>
-                        <p className="text-xs sm:text-sm text-gray-600">{balance.name}</p>
+                        <p className="font-semibold text-sm sm:text-base">
+                          {balance.symbol}
+                        </p>
+                        <p className="text-xs sm:text-sm text-gray-600">
+                          {balance.name}
+                        </p>
                         <div className="flex items-center gap-1 text-xs">
-                          <span className={balance.gainLossPercentage >= 0 ? "text-green-600" : "text-red-600"}>
-                            {balance.gainLossPercentage >= 0 ? "+" : ""}{balance.gainLossPercentage.toFixed(2)}%
+                          <span
+                            className={
+                              balance.gainLossPercentage >= 0
+                                ? "text-green-600"
+                                : "text-red-600"
+                            }
+                          >
+                            {balance.gainLossPercentage >= 0 ? "+" : ""}
+                            {balance.gainLossPercentage.toFixed(2)}%
                           </span>
                           <span className="text-gray-500">
-                            ({balance.gainLoss >= 0 ? "+" : ""}${balance.gainLoss.toFixed(2)})
+                            ({balance.gainLoss >= 0 ? "+" : ""}$
+                            {balance.gainLoss.toFixed(2)})
                           </span>
                         </div>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="font-semibold text-xs sm:text-sm">{balance.balance.toFixed(6)} {balance.symbol}</p>
-                      <p className="text-xs sm:text-sm text-gray-600">${balance.value.toFixed(2)}</p>
-                      <p className="text-xs text-gray-500">${balance.currentPrice.toFixed(2)} each</p>
+                      <p className="font-semibold text-xs sm:text-sm">
+                        {balance.balance.toFixed(6)} {balance.symbol}
+                      </p>
+                      <p className="text-xs sm:text-sm text-gray-600">
+                        ${balance.value.toFixed(2)}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        ${balance.currentPrice.toFixed(2)} each
+                      </p>
                     </div>
                   </div>
                 ))
               ) : (
                 <div className="text-center py-6 sm:py-8">
-                  <p className="text-gray-500 mb-4 text-sm sm:text-base">No tokens found</p>
-                  <Button 
+                  <p className="text-gray-500 mb-4 text-sm sm:text-base">
+                    No tokens found
+                  </p>
+                  <Button
                     onClick={() => setAddFundsModalOpen(true)}
                     size="sm"
                     className="touch-target"
@@ -530,8 +709,13 @@ function CryptoExchangeApp() {
             ) : (
               <div className="text-center py-6 sm:py-8">
                 <Wallet className="w-12 h-12 sm:w-16 sm:h-16 mx-auto text-gray-400 mb-4" />
-                <p className="text-gray-500 mb-4 text-sm sm:text-base">Connect your wallet to see holdings</p>
-                <Button onClick={() => setWalletModalOpen(true)} className="touch-target">
+                <p className="text-gray-500 mb-4 text-sm sm:text-base">
+                  Connect your wallet to see holdings
+                </p>
+                <Button
+                  onClick={() => setWalletModalOpen(true)}
+                  className="touch-target"
+                >
                   Connect Wallet
                 </Button>
               </div>
@@ -539,10 +723,97 @@ function CryptoExchangeApp() {
           </CardContent>
         </Card>
       </div>
-      
+
+      {/* Transaction History */}
+      {walletData.isConnected && (
+        <div className="mobile-container">
+          <Card className="mobile-card shadow-lg">
+            <CardHeader className="mobile-container pb-2">
+              <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                <History className="w-4 h-4 sm:w-5 sm:h-5" />
+                Recent Transactions
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="mobile-container pt-0 space-y-3">
+              {transactions.map((tx) => (
+                <div
+                  key={tx.id}
+                  className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-gray-800 animate-slide-up"
+                >
+                  <div className="flex items-center space-x-3">
+                    <div
+                      className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center ${
+                        tx.type === "buy"
+                          ? "bg-green-100"
+                          : tx.type === "sell"
+                          ? "bg-red-100"
+                          : "bg-blue-100"
+                      }`}
+                    >
+                      {tx.type === "buy" ? (
+                        <ArrowDownLeft className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
+                      ) : tx.type === "sell" ? (
+                        <ArrowUpRight className="w-4 h-4 sm:w-5 sm:h-5 text-red-600" />
+                      ) : (
+                        <Send className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
+                      )}
+                    </div>
+                    <div>
+                      <p className="font-semibold text-sm sm:text-base capitalize">
+                        {tx.type}
+                      </p>
+                      <p className="text-xs sm:text-sm text-gray-600">
+                        {tx.coin}
+                      </p>
+                      <p className="text-xs text-gray-500">{tx.date}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-semibold text-xs sm:text-sm">
+                      {tx.amount} {tx.coin}
+                    </p>
+                    <p className="text-xs sm:text-sm text-gray-600">
+                      ${tx.value.toFixed(2)}
+                    </p>
+                  </div>
+                </div>
+              ))}
+              <Button variant="outline" className="w-full touch-target">
+                View All Transactions
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* NFTs & Collectibles */}
+      {walletData.isConnected && (
+        <div className="mobile-container">
+          <Card className="mobile-card shadow-lg">
+            <CardHeader className="mobile-container pb-2">
+              <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                <ImageIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+                NFTs & Collectibles
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="mobile-container pt-0">
+              <div className="text-center py-6 sm:py-8">
+                <ImageIcon className="w-12 h-12 sm:w-16 sm:h-16 mx-auto text-gray-400 mb-4" />
+                <p className="text-gray-500 mb-4 text-sm sm:text-base">
+                  No NFTs found
+                </p>
+                <p className="text-xs text-gray-400">
+                  NFTs will appear here when you own them
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       <div className="pb-20"></div>
     </div>
-  )
+  );
 
   // Security Screen
   const SecurityScreen = () => (
@@ -565,24 +836,36 @@ function CryptoExchangeApp() {
           <CardContent className="mobile-container space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-semibold text-sm sm:text-base">Two-Factor Authentication</h3>
-                <p className="text-xs sm:text-sm text-gray-600">Add an extra layer of security</p>
+                <h3 className="font-semibold text-sm sm:text-base">
+                  Two-Factor Authentication
+                </h3>
+                <p className="text-xs sm:text-sm text-gray-600">
+                  Add an extra layer of security
+                </p>
               </div>
               <Switch defaultChecked={false} />
             </div>
-            
+
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-semibold text-sm sm:text-base">Biometric Login</h3>
-                <p className="text-xs sm:text-sm text-gray-600">Use fingerprint or face recognition</p>
+                <h3 className="font-semibold text-sm sm:text-base">
+                  Biometric Login
+                </h3>
+                <p className="text-xs sm:text-sm text-gray-600">
+                  Use fingerprint or face recognition
+                </p>
               </div>
               <Switch defaultChecked={true} />
             </div>
-            
+
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-semibold text-sm sm:text-base">Transaction PIN</h3>
-                <p className="text-xs sm:text-sm text-gray-600">Require PIN for transactions</p>
+                <h3 className="font-semibold text-sm sm:text-base">
+                  Transaction PIN
+                </h3>
+                <p className="text-xs sm:text-sm text-gray-600">
+                  Require PIN for transactions
+                </p>
               </div>
               <Switch defaultChecked={true} />
             </div>
@@ -597,10 +880,10 @@ function CryptoExchangeApp() {
           </CardContent>
         </Card>
       </div>
-      
+
       <div className="pb-20"></div>
     </div>
-  )
+  );
 
   // Notifications Screen
   const NotificationsScreen = () => (
@@ -623,9 +906,13 @@ function CryptoExchangeApp() {
           <CardContent className="mobile-container space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-semibold text-sm sm:text-base">Push Notifications</h3>
+                <h3 className="font-semibold text-sm sm:text-base">
+                  Push Notifications
+                </h3>
                 <p className="text-xs sm:text-sm text-gray-600">
-                  {pushNotifications ? "Enabled in browser" : "Tap to enable in your device"}
+                  {pushNotifications
+                    ? "Enabled in browser"
+                    : "Tap to enable in your device"}
                 </p>
               </div>
               <Button
@@ -638,22 +925,30 @@ function CryptoExchangeApp() {
                 {pushNotifications ? "Enabled" : "Enable"}
               </Button>
             </div>
-            
+
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-semibold text-sm sm:text-base">Email Notifications</h3>
-                <p className="text-xs sm:text-sm text-gray-600">Receive updates via email</p>
+                <h3 className="font-semibold text-sm sm:text-base">
+                  Email Notifications
+                </h3>
+                <p className="text-xs sm:text-sm text-gray-600">
+                  Receive updates via email
+                </p>
               </div>
               <Switch
                 checked={emailNotifications}
                 onCheckedChange={setEmailNotifications}
               />
             </div>
-            
+
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-semibold text-sm sm:text-base">Transaction Alerts</h3>
-                <p className="text-xs sm:text-sm text-gray-600">Notifications for sending and receiving</p>
+                <h3 className="font-semibold text-sm sm:text-base">
+                  Transaction Alerts
+                </h3>
+                <p className="text-xs sm:text-sm text-gray-600">
+                  Notifications for sending and receiving
+                </p>
               </div>
               <Switch
                 checked={transactionNotifications}
@@ -663,10 +958,10 @@ function CryptoExchangeApp() {
           </CardContent>
         </Card>
       </div>
-      
+
       <div className="pb-20"></div>
     </div>
-  )
+  );
 
   // Help & Support Screen
   const HelpSupportScreen = () => (
@@ -687,30 +982,44 @@ function CryptoExchangeApp() {
       <div className="mobile-container space-y-4">
         <Card className="mobile-card shadow-lg">
           <CardHeader className="mobile-container pb-2">
-            <CardTitle className="text-base sm:text-lg">Contact Support</CardTitle>
+            <CardTitle className="text-base sm:text-lg">
+              Contact Support
+            </CardTitle>
           </CardHeader>
           <CardContent className="mobile-container space-y-3">
             <Button
               variant="outline"
               className="w-full justify-start touch-target"
-              onClick={() => window.open('https://wa.me/2349013004266', '_blank')}
+              onClick={() =>
+                window.open("https://wa.me/2349013004266", "_blank")
+              }
             >
               <MessageCircle className="w-5 h-5 mr-3 text-green-600" />
               <div className="text-left">
-                <p className="font-medium text-sm sm:text-base">WhatsApp Support</p>
-                <p className="text-xs sm:text-sm text-gray-600">+234 901 300 4266</p>
+                <p className="font-medium text-sm sm:text-base">
+                  WhatsApp Support
+                </p>
+                <p className="text-xs sm:text-sm text-gray-600">
+                  +234 901 300 4266
+                </p>
               </div>
             </Button>
 
             <Button
               variant="outline"
               className="w-full justify-start touch-target"
-              onClick={() => window.open('mailto:spectra010s@gmail.com', '_blank')}
+              onClick={() =>
+                window.open("mailto:spectra010s@gmail.com", "_blank")
+              }
             >
               <Mail className="w-5 h-5 mr-3 text-blue-600" />
               <div className="text-left">
-                <p className="font-medium text-sm sm:text-base">Email Support</p>
-                <p className="text-xs sm:text-sm text-gray-600">spectra010s@gmail.com</p>
+                <p className="font-medium text-sm sm:text-base">
+                  Email Support
+                </p>
+                <p className="text-xs sm:text-sm text-gray-600">
+                  spectra010s@gmail.com
+                </p>
               </div>
             </Button>
           </CardContent>
@@ -718,40 +1027,61 @@ function CryptoExchangeApp() {
 
         <Card className="mobile-card shadow-lg">
           <CardContent className="mobile-container space-y-3">
-            <Button variant="outline" className="w-full justify-start touch-target">
+            <Button
+              variant="outline"
+              className="w-full justify-start touch-target"
+            >
               <div className="text-left">
                 <p className="font-medium text-sm sm:text-base">FAQ</p>
-                <p className="text-xs sm:text-sm text-gray-600">Frequently asked questions</p>
+                <p className="text-xs sm:text-sm text-gray-600">
+                  Frequently asked questions
+                </p>
               </div>
             </Button>
 
-            <Button variant="outline" className="w-full justify-start touch-target">
+            <Button
+              variant="outline"
+              className="w-full justify-start touch-target"
+            >
               <div className="text-left">
-                <p className="font-medium text-sm sm:text-base">Privacy Policy</p>
-                <p className="text-xs sm:text-sm text-gray-600">How we protect your data</p>
+                <p className="font-medium text-sm sm:text-base">
+                  Privacy Policy
+                </p>
+                <p className="text-xs sm:text-sm text-gray-600">
+                  How we protect your data
+                </p>
               </div>
             </Button>
 
-            <Button variant="outline" className="w-full justify-start touch-target">
+            <Button
+              variant="outline"
+              className="w-full justify-start touch-target"
+            >
               <div className="text-left">
-                <p className="font-medium text-sm sm:text-base">Terms of Service</p>
-                <p className="text-xs sm:text-sm text-gray-600">Usage terms and conditions</p>
+                <p className="font-medium text-sm sm:text-base">
+                  Terms of Service
+                </p>
+                <p className="text-xs sm:text-sm text-gray-600">
+                  Usage terms and conditions
+                </p>
               </div>
             </Button>
           </CardContent>
         </Card>
       </div>
-      
+
       <div className="pb-20"></div>
     </div>
-  )
+  );
 
   const ProfileScreen = () => (
     <div className="space-y-4 sm:space-y-6 animate-fade-in h-full overflow-y-auto scrollbar-hide">
       <div className="text-center space-y-4 mobile-container">
         <div className="relative">
           <Avatar className="w-20 h-20 sm:w-24 sm:h-24 mx-auto">
-            <AvatarImage src={user.photoURL || "/placeholder.svg?height=96&width=96"} />
+            <AvatarImage
+              src={user.photoURL || "/placeholder.svg?height=96&width=96"}
+            />
             <AvatarFallback className="text-xl sm:text-2xl bg-purple-100 text-purple-600">
               {user.displayName?.charAt(0) || user.email?.charAt(0) || "U"}
             </AvatarFallback>
@@ -765,12 +1095,12 @@ function CryptoExchangeApp() {
             <Camera className="w-4 h-4" />
           </Button>
         </div>
-        
+
         {/* Username with Edit Functionality */}
         <div className="space-y-2">
           {editingUsername ? (
             <div className="space-y-2">
-              <Input 
+              <Input
                 value={newUsername}
                 onChange={(e) => setNewUsername(e.target.value)}
                 placeholder="Enter username"
@@ -778,15 +1108,19 @@ function CryptoExchangeApp() {
                 maxLength={30}
               />
               <div className="flex justify-center gap-2">
-                <Button size="sm" onClick={handleUsernameUpdate} className="touch-target">
+                <Button
+                  size="sm"
+                  onClick={handleUsernameUpdate}
+                  className="touch-target"
+                >
                   Save
                 </Button>
-                <Button 
-                  size="sm" 
-                  variant="outline" 
+                <Button
+                  size="sm"
+                  variant="outline"
                   onClick={() => {
-                    setEditingUsername(false)
-                    setNewUsername(user.displayName || "")
+                    setEditingUsername(false);
+                    setNewUsername(user.displayName || "");
                   }}
                   className="touch-target"
                 >
@@ -796,7 +1130,9 @@ function CryptoExchangeApp() {
             </div>
           ) : (
             <div className="flex items-center justify-center gap-2">
-              <h1 className="text-xl sm:text-2xl font-bold">{user.displayName || "User"}</h1>
+              <h1 className="text-xl sm:text-2xl font-bold">
+                {user.displayName || "User"}
+              </h1>
               <Button
                 variant="ghost"
                 size="icon"
@@ -808,7 +1144,7 @@ function CryptoExchangeApp() {
             </div>
           )}
         </div>
-        
+
         <p className="text-gray-600 text-sm sm:text-base">{user.email}</p>
         <Badge className="bg-purple-100 text-purple-700">Verified</Badge>
       </div>
@@ -816,51 +1152,65 @@ function CryptoExchangeApp() {
       <Card className="mobile-card shadow-lg mx-4">
         <CardContent className="p-0">
           <div className="space-y-1">
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               className="w-full justify-start p-4 h-auto touch-target"
               onClick={() => setActiveTab("settings")}
             >
               <Settings className="w-5 h-5 mr-3 text-gray-600" />
               <div className="text-left">
-                <p className="font-medium text-sm sm:text-base">Account Settings</p>
-                <p className="text-xs sm:text-sm text-gray-600">Manage your account preferences</p>
+                <p className="font-medium text-sm sm:text-base">
+                  Account Settings
+                </p>
+                <p className="text-xs sm:text-sm text-gray-600">
+                  Manage your account preferences
+                </p>
               </div>
             </Button>
 
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               className="w-full justify-start p-4 h-auto touch-target"
               onClick={() => setActiveSubTab("security")}
             >
               <Shield className="w-5 h-5 mr-3 text-gray-600" />
               <div className="text-left">
                 <p className="font-medium text-sm sm:text-base">Security</p>
-                <p className="text-xs sm:text-sm text-gray-600">Two-factor authentication, passwords</p>
+                <p className="text-xs sm:text-sm text-gray-600">
+                  Two-factor authentication, passwords
+                </p>
               </div>
             </Button>
 
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               className="w-full justify-start p-4 h-auto touch-target"
               onClick={() => setActiveSubTab("notifications")}
             >
               <Bell className="w-5 h-5 mr-3 text-gray-600" />
               <div className="text-left">
-                <p className="font-medium text-sm sm:text-base">Notifications</p>
-                <p className="text-xs sm:text-sm text-gray-600">Push notifications, email alerts</p>
+                <p className="font-medium text-sm sm:text-base">
+                  Notifications
+                </p>
+                <p className="text-xs sm:text-sm text-gray-600">
+                  Push notifications, email alerts
+                </p>
               </div>
             </Button>
 
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               className="w-full justify-start p-4 h-auto touch-target"
               onClick={() => setActiveSubTab("help")}
             >
               <HelpCircle className="w-5 h-5 mr-3 text-gray-600" />
               <div className="text-left">
-                <p className="font-medium text-sm sm:text-base">Help & Support</p>
-                <p className="text-xs sm:text-sm text-gray-600">Get help and contact support</p>
+                <p className="font-medium text-sm sm:text-base">
+                  Help & Support
+                </p>
+                <p className="text-xs sm:text-sm text-gray-600">
+                  Get help and contact support
+                </p>
               </div>
             </Button>
           </div>
@@ -886,39 +1236,37 @@ function CryptoExchangeApp() {
         <LogOut className="w-5 h-5 mr-2" />
         Sign Out
       </Button>
-      
+
       <div className="pb-20"></div>
     </div>
-  )
+  );
 
   const renderScreen = () => {
-    if (activeSubTab === "security") return <SecurityScreen />
-    if (activeSubTab === "notifications") return <NotificationsScreen />
-    if (activeSubTab === "help") return <HelpSupportScreen />
-    
+    if (activeSubTab === "security") return <SecurityScreen />;
+    if (activeSubTab === "notifications") return <NotificationsScreen />;
+    if (activeSubTab === "help") return <HelpSupportScreen />;
+
     switch (activeTab) {
       case "home":
-        return <HomeScreen />
+        return <HomeScreen />;
       case "markets":
-        return <MarketScreen />
+        return <MarketScreen />;
       case "wallet":
-        return <WalletScreen />
+        return <WalletScreen />;
       case "profile":
-        return <ProfileScreen />
+        return <ProfileScreen />;
       case "settings":
-        return <SettingsPage onBack={() => setActiveTab("profile")} />
+        return <SettingsPage onBack={() => setActiveTab("profile")} />;
       default:
-        return <HomeScreen />
+        return <HomeScreen />;
     }
-  }
+  };
 
   return (
     <div className="h-full full-viewport flex flex-col max-w-md mx-auto bg-white/10 backdrop-blur-sm dark:bg-gray-900/10 overflow-hidden">
       {/* Main Content */}
       <div className="flex-1 overflow-hidden">
-        <div className="h-full">
-          {renderScreen()}
-        </div>
+        <div className="h-full">{renderScreen()}</div>
       </div>
 
       {/* Bottom Navigation - Mobile-Optimized */}
@@ -939,11 +1287,15 @@ function CryptoExchangeApp() {
                   : "text-gray-600 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20"
               }`}
               onClick={() => {
-                setActiveTab(tab.id)
-                setActiveSubTab("")
+                setActiveTab(tab.id);
+                setActiveSubTab("");
               }}
             >
-              <tab.icon className={`w-5 h-5 sm:w-6 sm:h-6 ${activeTab === tab.id ? "text-purple-600" : ""}`} />
+              <tab.icon
+                className={`w-5 h-5 sm:w-6 sm:h-6 ${
+                  activeTab === tab.id ? "text-purple-600" : ""
+                }`}
+              />
               <span className="text-xs font-medium truncate">{tab.label}</span>
             </Button>
           ))}
@@ -959,7 +1311,9 @@ function CryptoExchangeApp() {
           <div className="space-y-4">
             <div className="text-center space-y-4">
               <Avatar className="w-24 h-24 mx-auto">
-                <AvatarImage src={user.photoURL || "/placeholder.svg?height=96&width=96"} />
+                <AvatarImage
+                  src={user.photoURL || "/placeholder.svg?height=96&width=96"}
+                />
                 <AvatarFallback className="text-2xl bg-purple-100 text-purple-600">
                   {user.displayName?.charAt(0) || user.email?.charAt(0) || "U"}
                 </AvatarFallback>
@@ -969,7 +1323,11 @@ function CryptoExchangeApp() {
                   <Upload className="w-4 h-4 mr-2" />
                   Upload Photo
                 </Button>
-                <Button variant="outline" className="w-full" onClick={handleProfilePicUpload}>
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={handleProfilePicUpload}
+                >
                   <Camera className="w-4 h-4 mr-2" />
                   Take Photo
                 </Button>
@@ -993,7 +1351,7 @@ function CryptoExchangeApp() {
         onClose={() => setSendModalOpen(false)}
       />
     </div>
-  )
+  );
 }
 
 export default function App() {
@@ -1001,5 +1359,5 @@ export default function App() {
     <AuthProvider>
       <CryptoExchangeApp />
     </AuthProvider>
-  )
+  );
 }

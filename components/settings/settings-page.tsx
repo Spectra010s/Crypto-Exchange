@@ -92,63 +92,14 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
   const [phoneStep, setPhoneStep] = useState<"input" | "code">("input");
   const recaptchaRef = useRef<any>(null);
 
-  const handlePhoneVerification = async () => {
-    if (!phoneNumber) {
-      toast({
-        title: "Error",
-        description: "Please enter a phone number",
-        variant: "destructive",
-      });
-      return;
-    }
+  // Remove the mock phone verification functions and replace with real Firebase implementations
+  // Remove these functions:
+  // - handlePhoneVerification (mock)
+  // - handleVerifyCode (mock)
 
-    setIsVerifying(true);
-    try {
-      // Simulate API call for phone verification
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      setShowVerificationInput(true);
-      toast({
-        title: "Verification Code Sent",
-        description: `Code sent to ${phoneNumber}`,
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to send verification code",
-        variant: "destructive",
-      });
-    } finally {
-      setIsVerifying(false);
-    }
-  };
-
-  const handleVerifyCode = async () => {
-    if (!verificationCode) {
-      toast({
-        title: "Error",
-        description: "Please enter the verification code",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      // Simulate verification
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      setIsPhoneVerified(true);
-      setShowVerificationInput(false);
-      toast({
-        title: "Success",
-        description: "Phone number verified successfully",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Invalid verification code",
-        variant: "destructive",
-      });
-    }
-  };
+  // Keep the real Firebase implementations:
+  // - handleSendPhoneCode (real Firebase)
+  // - handleVerifyPhoneCode (real Firebase)
 
   const handlePasswordChange = async () => {
     if (!currentPassword || !newPassword || !confirmPassword) {

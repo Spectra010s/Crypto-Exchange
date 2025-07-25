@@ -275,6 +275,7 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
           uid: userCred.user.uid,
         });
       } else {
+<<<<<<< Updated upstream
         if (authMethod === "phone") {
         const userCred = await createUserWithPhoneAndPassword(
           auth,
@@ -284,6 +285,10 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
         await userCred.user.updateProfile({ displayName: username });
         await handlePhoneSendCode(userCred.user);
         handlePhoneVerifyCode(true);
+=======
+        // Phone sign up logic - using real Firebase SMS verification
+        setVerificationSent(true);
+>>>>>>> Stashed changes
         toast({
           title: "Verify Phone",
           description: `A verification code has been sent to ${countryCode}${phone}`,
