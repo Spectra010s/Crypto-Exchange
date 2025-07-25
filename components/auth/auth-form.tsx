@@ -275,9 +275,15 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
           uid: userCred.user.uid,
         });
       } else {
-        // Phone sign up logic (mock, as Firebase phone auth is not used here)
-        // In production, integrate with a phone verification service
-        setVerificationSent(true);
+        if (authMethod === "phone") {
+        const userCred = await createUserWithPhoneAndPassword(
+          auth,
+          phone,
+          password
+        );
+        await userCred.user.updateProfile({ displayName: username });
+        await handlePhoneSendCode(userCred.user);
+        handlePhoneVerifyCode(true);
         toast({
           title: "Verify Phone",
           description: `A verification code has been sent to ${countryCode}${phone}`,
