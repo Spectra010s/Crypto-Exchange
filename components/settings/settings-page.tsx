@@ -1,68 +1,96 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Switch } from "@/components/ui/switch"
-import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { 
-  Settings, 
-  Phone, 
-  Shield, 
-  Key, 
-  Palette, 
-  Bell, 
-  User, 
+import { useState, useRef } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Settings,
+  Phone,
+  Shield,
+  Key,
+  Palette,
+  Bell,
+  User,
   CheckCircle,
   AlertCircle,
   Eye,
   EyeOff,
   ArrowLeft,
   Camera,
-  Upload
-} from "lucide-react"
-import { useToast } from "@/hooks/use-toast"
-import { useAuth } from "@/hooks/use-auth"
-import { useTheme } from "next-themes"
+  Upload,
+} from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
+import { useTheme } from "next-themes";
+import { auth } from "@/lib/firebase";
+import {
+  EmailAuthProvider,
+  PhoneAuthProvider,
+  linkWithCredential,
+  updateProfile,
+} from "firebase/auth";
 
 interface SettingsPageProps {
-  onBack?: () => void
+  onBack?: () => void;
 }
 
 export function SettingsPage({ onBack }: SettingsPageProps) {
-  const { user } = useAuth()
-  const { theme, setTheme } = useTheme()
-  const { toast } = useToast()
-  
+  const { user } = useAuth();
+  const { theme, setTheme } = useTheme();
+  const { toast } = useToast();
+
   // State for various settings
-  const [phoneNumber, setPhoneNumber] = useState("")
-  const [isPhoneVerified, setIsPhoneVerified] = useState(false)
-  const [verificationCode, setVerificationCode] = useState("")
-  const [isVerifying, setIsVerifying] = useState(false)
-  const [showVerificationInput, setShowVerificationInput] = useState(false)
-  const [profilePicModalOpen, setProfilePicModalOpen] = useState(false)
-  
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [isPhoneVerified, setIsPhoneVerified] = useState(false);
+  const [verificationCode, setVerificationCode] = useState("");
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [showVerificationInput, setShowVerificationInput] = useState(false);
+  const [profilePicModalOpen, setProfilePicModalOpen] = useState(false);
+
   // Password change state
-  const [currentPassword, setCurrentPassword] = useState("")
-  const [newPassword, setNewPassword] = useState("")
-  const [confirmPassword, setConfirmPassword] = useState("")
-  const [showPasswords, setShowPasswords] = useState(false)
-  const [isChangingPassword, setIsChangingPassword] = useState(false)
-  
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPasswords, setShowPasswords] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+
   // 2FA state
-  const [is2FAEnabled, setIs2FAEnabled] = useState(false)
-  const [qrCodeUrl, setQrCodeUrl] = useState("")
-  const [twoFactorCode, setTwoFactorCode] = useState("")
-  const [isEnabling2FA, setIsEnabling2FA] = useState(false)
-  
+  const [is2FAEnabled, setIs2FAEnabled] = useState(false);
+  const [qrCodeUrl, setQrCodeUrl] = useState("");
+  const [twoFactorCode, setTwoFactorCode] = useState("");
+  const [isEnabling2FA, setIsEnabling2FA] = useState(false);
+
   // Notification settings
-  const [emailNotifications, setEmailNotifications] = useState(true)
-  const [pushNotifications, setPushNotifications] = useState(true)
-  const [transactionAlerts, setTransactionAlerts] = useState(true)
+  const [emailNotifications, setEmailNotifications] = useState(true);
+  const [pushNotifications, setPushNotifications] = useState(true);
+  const [transactionAlerts, setTransactionAlerts] = useState(true);
+
+  // Add state for email linking
+  const [newEmail, setNewEmail] = useState("");
+  const [emailPassword, setEmailPassword] = useState("");
+  const [emailEditMode, setEmailEditMode] = useState(false);
+  const [emailLoading, setEmailLoading] = useState(false);
+
+  // Add state for phone linking
+  const [newPhone, setNewPhone] = useState("");
+  const [phoneEditMode, setPhoneEditMode] = useState(false);
+  const [phoneLoading, setPhoneLoading] = useState(false);
+  const [phoneCode, setPhoneCode] = useState("");
+  const [phoneVerificationId, setPhoneVerificationId] = useState("");
+  const [phoneStep, setPhoneStep] = useState<"input" | "code">("input");
+  const recaptchaRef = useRef<any>(null);
 
   const handlePhoneVerification = async () => {
     if (!phoneNumber) {
@@ -70,29 +98,29 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
         title: "Error",
         description: "Please enter a phone number",
         variant: "destructive",
-      })
-      return
+      });
+      return;
     }
 
-    setIsVerifying(true)
+    setIsVerifying(true);
     try {
       // Simulate API call for phone verification
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      setShowVerificationInput(true)
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      setShowVerificationInput(true);
       toast({
         title: "Verification Code Sent",
         description: `Code sent to ${phoneNumber}`,
-      })
+      });
     } catch (error) {
       toast({
         title: "Error",
         description: "Failed to send verification code",
         variant: "destructive",
-      })
+      });
     } finally {
-      setIsVerifying(false)
+      setIsVerifying(false);
     }
-  }
+  };
 
   const handleVerifyCode = async () => {
     if (!verificationCode) {
@@ -100,27 +128,27 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
         title: "Error",
         description: "Please enter the verification code",
         variant: "destructive",
-      })
-      return
+      });
+      return;
     }
 
     try {
       // Simulate verification
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      setIsPhoneVerified(true)
-      setShowVerificationInput(false)
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      setIsPhoneVerified(true);
+      setShowVerificationInput(false);
       toast({
         title: "Success",
         description: "Phone number verified successfully",
-      })
+      });
     } catch (error) {
       toast({
         title: "Error",
         description: "Invalid verification code",
         variant: "destructive",
-      })
+      });
     }
-  }
+  };
 
   const handlePasswordChange = async () => {
     if (!currentPassword || !newPassword || !confirmPassword) {
@@ -128,8 +156,8 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
         title: "Error",
         description: "Please fill in all password fields",
         variant: "destructive",
-      })
-      return
+      });
+      return;
     }
 
     if (newPassword !== confirmPassword) {
@@ -137,8 +165,8 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
         title: "Error",
         description: "New passwords don't match",
         variant: "destructive",
-      })
-      return
+      });
+      return;
     }
 
     if (newPassword.length < 6) {
@@ -146,52 +174,54 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
         title: "Error",
         description: "Password must be at least 6 characters",
         variant: "destructive",
-      })
-      return
+      });
+      return;
     }
 
-    setIsChangingPassword(true)
+    setIsChangingPassword(true);
     try {
       // Simulate password change API call
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      setCurrentPassword("")
-      setNewPassword("")
-      setConfirmPassword("")
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
       toast({
         title: "Success",
         description: "Password changed successfully",
-      })
+      });
     } catch (error) {
       toast({
         title: "Error",
         description: "Failed to change password",
         variant: "destructive",
-      })
+      });
     } finally {
-      setIsChangingPassword(false)
+      setIsChangingPassword(false);
     }
-  }
+  };
 
   const handleEnable2FA = async () => {
-    setIsEnabling2FA(true)
+    setIsEnabling2FA(true);
     try {
       // Simulate 2FA setup
-      await new Promise(resolve => setTimeout(resolve, 1500))
-      setQrCodeUrl("https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=otpauth://totp/CryptoExchange:user@example.com?secret=JBSWY3DPEHPK3PXP&issuer=CryptoExchange")
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      setQrCodeUrl(
+        "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=otpauth://totp/CryptoExchange:user@example.com?secret=JBSWY3DPEHPK3PXP&issuer=CryptoExchange"
+      );
       toast({
         title: "2FA Setup",
         description: "Scan the QR code with your authenticator app",
-      })
+      });
     } catch (error) {
       toast({
         title: "Error",
         description: "Failed to setup 2FA",
         variant: "destructive",
-      })
+      });
     } finally {
-      setIsEnabling2FA(false)
+      setIsEnabling2FA(false);
     }
-  }
+  };
 
   const handleConfirm2FA = async () => {
     if (!twoFactorCode) {
@@ -199,54 +229,144 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
         title: "Error",
         description: "Please enter the 6-digit code",
         variant: "destructive",
-      })
-      return
+      });
+      return;
     }
 
     try {
       // Simulate 2FA confirmation
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      setIs2FAEnabled(true)
-      setQrCodeUrl("")
-      setTwoFactorCode("")
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      setIs2FAEnabled(true);
+      setQrCodeUrl("");
+      setTwoFactorCode("");
       toast({
         title: "Success",
         description: "Two-factor authentication enabled",
-      })
+      });
     } catch (error) {
       toast({
         title: "Error",
         description: "Invalid code. Please try again",
         variant: "destructive",
-      })
+      });
     }
-  }
+  };
 
   const handleDisable2FA = async () => {
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      setIs2FAEnabled(false)
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      setIs2FAEnabled(false);
       toast({
         title: "Success",
         description: "Two-factor authentication disabled",
-      })
+      });
     } catch (error) {
       toast({
         title: "Error",
         description: "Failed to disable 2FA",
         variant: "destructive",
-      })
+      });
     }
-  }
+  };
 
   const handleProfilePicUpload = async () => {
     // Mock profile picture upload
     toast({
       title: "Coming Soon",
       description: "Profile picture upload will be available soon",
-    })
-    setProfilePicModalOpen(false)
-  }
+    });
+    setProfilePicModalOpen(false);
+  };
+
+  // Email linking handler
+  const handleLinkEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setEmailLoading(true);
+    try {
+      if (!auth.currentUser) throw new Error("Not authenticated");
+      const credential = EmailAuthProvider.credential(newEmail, emailPassword);
+      await linkWithCredential(auth.currentUser, credential);
+      await updateProfile(auth.currentUser, { email: newEmail });
+      toast({ title: "Success", description: "Email linked successfully" });
+      setEmailEditMode(false);
+      setNewEmail("");
+      setEmailPassword("");
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to link email",
+        variant: "destructive",
+      });
+    } finally {
+      setEmailLoading(false);
+    }
+  };
+
+  // Phone linking handlers
+  const setupRecaptcha = () => {
+    if (!recaptchaRef.current) {
+      recaptchaRef.current = new window.RecaptchaVerifier(
+        "recaptcha-container-settings",
+        { size: "invisible" },
+        auth
+      );
+    }
+    return recaptchaRef.current;
+  };
+
+  const handleSendPhoneCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPhoneLoading(true);
+    try {
+      if (!newPhone) throw new Error("Enter a phone number");
+      const appVerifier = setupRecaptcha();
+      const provider = new PhoneAuthProvider(auth);
+      const verificationId = await provider.verifyPhoneNumber(
+        newPhone,
+        appVerifier
+      );
+      setPhoneVerificationId(verificationId);
+      setPhoneStep("code");
+      toast({
+        title: "SMS Sent",
+        description: `A verification code was sent to ${newPhone}`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send SMS",
+        variant: "destructive",
+      });
+    } finally {
+      setPhoneLoading(false);
+    }
+  };
+
+  const handleVerifyPhoneCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPhoneLoading(true);
+    try {
+      if (!auth.currentUser) throw new Error("Not authenticated");
+      const credential = PhoneAuthProvider.credential(
+        phoneVerificationId,
+        phoneCode
+      );
+      await linkWithCredential(auth.currentUser, credential);
+      toast({ title: "Success", description: "Phone linked successfully" });
+      setPhoneEditMode(false);
+      setNewPhone("");
+      setPhoneCode("");
+      setPhoneStep("input");
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to link phone",
+        variant: "destructive",
+      });
+    } finally {
+      setPhoneLoading(false);
+    }
+  };
 
   return (
     <div className="space-y-4 sm:space-y-6 animate-fade-in h-full overflow-y-auto scrollbar-hide">
@@ -279,9 +399,15 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
             <div className="flex items-center gap-4">
               <div className="relative">
                 <Avatar className="w-16 h-16">
-                  <AvatarImage src={user?.photoURL || "/placeholder.svg?height=64&width=64"} />
+                  <AvatarImage
+                    src={
+                      user?.photoURL || "/placeholder.svg?height=64&width=64"
+                    }
+                  />
                   <AvatarFallback className="text-lg bg-purple-100 text-purple-600">
-                    {user?.displayName?.charAt(0) || user?.email?.charAt(0) || "U"}
+                    {user?.displayName?.charAt(0) ||
+                      user?.email?.charAt(0) ||
+                      "U"}
                   </AvatarFallback>
                 </Avatar>
                 <Button
@@ -294,74 +420,154 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
                 </Button>
               </div>
               <div className="flex-1">
-                <p className="font-medium text-sm sm:text-base">{user?.displayName || "User"}</p>
-                <p className="text-xs sm:text-sm text-gray-600">Tap to change profile picture</p>
+                <p className="font-medium text-sm sm:text-base">
+                  {user?.displayName || "User"}
+                </p>
+                <p className="text-xs sm:text-sm text-gray-600">
+                  Tap to change profile picture
+                </p>
               </div>
             </div>
 
             <div>
               <Label className="text-sm sm:text-base">Email</Label>
               <div className="flex items-center gap-2 mt-1">
-                <Input value={user?.email || ""} readOnly className="bg-gray-50 text-sm sm:text-base" />
-                <Badge variant="secondary" className="bg-green-100 text-green-800 text-xs">
+                <Input
+                  value={user?.email || ""}
+                  readOnly
+                  className="bg-gray-50 text-sm sm:text-base"
+                />
+                <Badge
+                  variant="secondary"
+                  className="bg-green-100 text-green-800 text-xs"
+                >
                   Verified
                 </Badge>
               </div>
             </div>
             <div>
               <Label className="text-sm sm:text-base">Display Name</Label>
-              <Input value={user?.displayName || "Not set"} className="mt-1 text-sm sm:text-base" />
+              <Input
+                value={user?.displayName || "Not set"}
+                className="mt-1 text-sm sm:text-base"
+              />
             </div>
           </CardContent>
         </Card>
 
-        {/* Phone Verification */}
+        {/* Email */}
+        <Card className="mobile-card shadow-lg">
+          <CardHeader className="mobile-container pb-2">
+            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+              <User className="w-4 h-4 sm:w-5 sm:h-5" />
+              Email
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="mobile-container pt-0 space-y-4">
+            {user?.email && (
+              <div>
+                Current: <span className="font-medium">{user.email}</span>
+              </div>
+            )}
+            {emailEditMode ? (
+              <form onSubmit={handleLinkEmail} className="space-y-2">
+                <Input
+                  type="email"
+                  placeholder="New email"
+                  value={newEmail}
+                  onChange={(e) => setNewEmail(e.target.value)}
+                  required
+                />
+                <Input
+                  type="password"
+                  placeholder="Password"
+                  value={emailPassword}
+                  onChange={(e) => setEmailPassword(e.target.value)}
+                  required
+                />
+                <Button type="submit" disabled={emailLoading}>
+                  {emailLoading ? "Linking..." : "Link Email"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setEmailEditMode(false)}
+                >
+                  Cancel
+                </Button>
+              </form>
+            ) : (
+              <Button onClick={() => setEmailEditMode(true)}>
+                {user?.email ? "Change Email" : "Add Email"}
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Phone */}
         <Card className="mobile-card shadow-lg">
           <CardHeader className="mobile-container pb-2">
             <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
               <Phone className="w-4 h-4 sm:w-5 sm:h-5" />
-              Phone Verification
+              Phone
             </CardTitle>
           </CardHeader>
           <CardContent className="mobile-container pt-0 space-y-4">
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-              <Input 
-                placeholder="+1 (555) 123-4567"
-                value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
-                disabled={isPhoneVerified}
-                className="text-sm sm:text-base flex-1"
-              />
-              {isPhoneVerified ? (
-                <Badge className="bg-green-100 text-green-800 flex items-center gap-1 justify-center py-2">
-                  <CheckCircle className="w-3 h-3" />
-                  Verified
-                </Badge>
-              ) : (
-                <Button 
-                  onClick={handlePhoneVerification}
-                  disabled={isVerifying}
-                  size="sm"
-                  className="touch-target"
-                >
-                  {isVerifying ? "Sending..." : "Verify"}
-                </Button>
-              )}
-            </div>
-            
-            {showVerificationInput && (
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                <Input 
-                  placeholder="Enter 6-digit code"
-                  value={verificationCode}
-                  onChange={(e) => setVerificationCode(e.target.value)}
-                  maxLength={6}
-                  className="text-sm sm:text-base flex-1"
-                />
-                <Button onClick={handleVerifyCode} size="sm" className="touch-target">
-                  Confirm
-                </Button>
+            {user?.phoneNumber && (
+              <div>
+                Current: <span className="font-medium">{user.phoneNumber}</span>
               </div>
+            )}
+            {phoneEditMode ? (
+              phoneStep === "input" ? (
+                <form onSubmit={handleSendPhoneCode} className="space-y-2">
+                  <Input
+                    type="tel"
+                    placeholder="New phone number"
+                    value={newPhone}
+                    onChange={(e) => setNewPhone(e.target.value)}
+                    required
+                  />
+                  <div id="recaptcha-container-settings" />
+                  <Button type="submit" disabled={phoneLoading}>
+                    {phoneLoading ? "Sending..." : "Send Code"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setPhoneEditMode(false)}
+                  >
+                    Cancel
+                  </Button>
+                </form>
+              ) : (
+                <form onSubmit={handleVerifyPhoneCode} className="space-y-2">
+                  <Input
+                    type="text"
+                    placeholder="Verification code"
+                    value={phoneCode}
+                    onChange={(e) => setPhoneCode(e.target.value)}
+                    required
+                  />
+                  <Button type="submit" disabled={phoneLoading}>
+                    {phoneLoading ? "Verifying..." : "Verify & Link"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setPhoneStep("input");
+                      setPhoneCode("");
+                    }}
+                  >
+                    Back
+                  </Button>
+                </form>
+              )
+            ) : (
+              <Button onClick={() => setPhoneEditMode(true)}>
+                {user?.phoneNumber ? "Change Phone" : "Add Phone"}
+              </Button>
             )}
           </CardContent>
         </Card>
@@ -377,14 +583,20 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
           <CardContent className="mobile-container pt-0">
             <div className="flex items-center justify-between">
               <div>
-                <Label className="text-sm sm:text-base font-medium">Theme</Label>
-                <p className="text-xs sm:text-sm text-gray-600 mt-1">Choose between light and dark theme</p>
+                <Label className="text-sm sm:text-base font-medium">
+                  Theme
+                </Label>
+                <p className="text-xs sm:text-sm text-gray-600 mt-1">
+                  Choose between light and dark theme
+                </p>
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-xs sm:text-sm">Light</span>
                 <Switch
-                  checked={theme === 'dark'}
-                  onCheckedChange={(checked) => setTheme(checked ? 'dark' : 'light')}
+                  checked={theme === "dark"}
+                  onCheckedChange={(checked) =>
+                    setTheme(checked ? "dark" : "light")
+                  }
                 />
                 <span className="text-xs sm:text-sm">Dark</span>
               </div>
@@ -404,7 +616,7 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
             <div>
               <Label className="text-sm sm:text-base">Current Password</Label>
               <div className="relative mt-1">
-                <Input 
+                <Input
                   type={showPasswords ? "text" : "password"}
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
@@ -417,32 +629,38 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
                   className="absolute right-0 top-0 h-full px-3"
                   onClick={() => setShowPasswords(!showPasswords)}
                 >
-                  {showPasswords ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  {showPasswords ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
                 </Button>
               </div>
             </div>
-            
+
             <div>
               <Label className="text-sm sm:text-base">New Password</Label>
-              <Input 
+              <Input
                 type={showPasswords ? "text" : "password"}
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 className="mt-1 text-sm sm:text-base"
               />
             </div>
-            
+
             <div>
-              <Label className="text-sm sm:text-base">Confirm New Password</Label>
-              <Input 
+              <Label className="text-sm sm:text-base">
+                Confirm New Password
+              </Label>
+              <Input
                 type={showPasswords ? "text" : "password"}
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 className="mt-1 text-sm sm:text-base"
               />
             </div>
-            
-            <Button 
+
+            <Button
               onClick={handlePasswordChange}
               disabled={isChangingPassword}
               className="w-full touch-target"
@@ -463,40 +681,56 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
           <CardContent className="mobile-container pt-0 space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <Label className="text-sm sm:text-base font-medium">2FA Status</Label>
+                <Label className="text-sm sm:text-base font-medium">
+                  2FA Status
+                </Label>
                 <p className="text-xs sm:text-sm text-gray-600 mt-1">
-                  {is2FAEnabled ? "Enhanced security is active" : "Add an extra layer of security"}
+                  {is2FAEnabled
+                    ? "Enhanced security is active"
+                    : "Add an extra layer of security"}
                 </p>
               </div>
-              <Badge variant={is2FAEnabled ? "default" : "secondary"} className="text-xs">
+              <Badge
+                variant={is2FAEnabled ? "default" : "secondary"}
+                className="text-xs"
+              >
                 {is2FAEnabled ? "Enabled" : "Disabled"}
               </Badge>
             </div>
 
             {!is2FAEnabled ? (
               <div className="space-y-4">
-                <Button 
+                <Button
                   onClick={handleEnable2FA}
                   disabled={isEnabling2FA}
                   className="w-full touch-target"
                 >
                   {isEnabling2FA ? "Setting up..." : "Enable 2FA"}
                 </Button>
-                
+
                 {qrCodeUrl && (
                   <div className="text-center space-y-4">
-                    <img src={qrCodeUrl} alt="2FA QR Code" className="mx-auto max-w-[200px] w-full h-auto" />
+                    <img
+                      src={qrCodeUrl}
+                      alt="2FA QR Code"
+                      className="mx-auto max-w-[200px] w-full h-auto"
+                    />
                     <div>
-                      <Label className="text-sm sm:text-base">Enter code from authenticator app</Label>
+                      <Label className="text-sm sm:text-base">
+                        Enter code from authenticator app
+                      </Label>
                       <div className="flex flex-col sm:flex-row gap-2 mt-1">
-                        <Input 
+                        <Input
                           placeholder="123456"
                           value={twoFactorCode}
                           onChange={(e) => setTwoFactorCode(e.target.value)}
                           maxLength={6}
                           className="text-sm sm:text-base flex-1"
                         />
-                        <Button onClick={handleConfirm2FA} className="touch-target">
+                        <Button
+                          onClick={handleConfirm2FA}
+                          className="touch-target"
+                        >
                           Confirm
                         </Button>
                       </div>
@@ -505,8 +739,8 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
                 )}
               </div>
             ) : (
-              <Button 
-                variant="destructive" 
+              <Button
+                variant="destructive"
                 onClick={handleDisable2FA}
                 className="w-full touch-target"
               >
@@ -527,30 +761,42 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
           <CardContent className="mobile-container pt-0 space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <Label className="text-sm sm:text-base font-medium">Email Notifications</Label>
-                <p className="text-xs sm:text-sm text-gray-600 mt-1">Receive updates via email</p>
+                <Label className="text-sm sm:text-base font-medium">
+                  Email Notifications
+                </Label>
+                <p className="text-xs sm:text-sm text-gray-600 mt-1">
+                  Receive updates via email
+                </p>
               </div>
               <Switch
                 checked={emailNotifications}
                 onCheckedChange={setEmailNotifications}
               />
             </div>
-            
+
             <div className="flex items-center justify-between">
               <div>
-                <Label className="text-sm sm:text-base font-medium">Push Notifications</Label>
-                <p className="text-xs sm:text-sm text-gray-600 mt-1">Browser push notifications</p>
+                <Label className="text-sm sm:text-base font-medium">
+                  Push Notifications
+                </Label>
+                <p className="text-xs sm:text-sm text-gray-600 mt-1">
+                  Browser push notifications
+                </p>
               </div>
               <Switch
                 checked={pushNotifications}
                 onCheckedChange={setPushNotifications}
               />
             </div>
-            
+
             <div className="flex items-center justify-between">
               <div>
-                <Label className="text-sm sm:text-base font-medium">Transaction Alerts</Label>
-                <p className="text-xs sm:text-sm text-gray-600 mt-1">Notifications for wallet activity</p>
+                <Label className="text-sm sm:text-base font-medium">
+                  Transaction Alerts
+                </Label>
+                <p className="text-xs sm:text-sm text-gray-600 mt-1">
+                  Notifications for wallet activity
+                </p>
               </div>
               <Switch
                 checked={transactionAlerts}
@@ -570,9 +816,13 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
           <div className="space-y-4">
             <div className="text-center space-y-4">
               <Avatar className="w-24 h-24 mx-auto">
-                <AvatarImage src={user?.photoURL || "/placeholder.svg?height=96&width=96"} />
+                <AvatarImage
+                  src={user?.photoURL || "/placeholder.svg?height=96&width=96"}
+                />
                 <AvatarFallback className="text-2xl bg-purple-100 text-purple-600">
-                  {user?.displayName?.charAt(0) || user?.email?.charAt(0) || "U"}
+                  {user?.displayName?.charAt(0) ||
+                    user?.email?.charAt(0) ||
+                    "U"}
                 </AvatarFallback>
               </Avatar>
               <div className="space-y-2">
@@ -580,7 +830,11 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
                   <Upload className="w-4 h-4 mr-2" />
                   Upload Photo
                 </Button>
-                <Button variant="outline" className="w-full" onClick={handleProfilePicUpload}>
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={handleProfilePicUpload}
+                >
                   <Camera className="w-4 h-4 mr-2" />
                   Take Photo
                 </Button>
@@ -589,8 +843,8 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
           </div>
         </DialogContent>
       </Dialog>
-      
+
       <div className="pb-20"></div>
     </div>
-  )
+  );
 }
