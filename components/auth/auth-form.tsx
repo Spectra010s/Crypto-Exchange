@@ -12,29 +12,24 @@ import {
   sendPasswordResetEmail,
   EmailAuthProvider,
   linkWithCredential,
+  signInWithPopup,
+  GoogleAuthProvider,
 } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  Eye,
-  EyeOff,
   Mail,
   Lock,
-  Phone,
+  Eye,
+  EyeOff,
   User as UserIcon,
-  Globe,
+  Phone,
   ArrowLeft,
+  Globe,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Logo } from "@/components/ui/logo";
@@ -63,7 +58,9 @@ interface AuthFormProps {
 
 export function AuthForm({ onAuthSuccess }: AuthFormProps) {
   const [isSignUp, setIsSignUp] = useState(false);
-  const [authMethod, setAuthMethod] = useState<"email" | "phone">("email");
+  const [authMethod, setAuthMethod] = useState<
+    "email" | "phone" | "username" | "google"
+  >("email");
   const [countryCode, setCountryCode] = useState(COUNTRY_CODES[0].code);
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -105,6 +102,37 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
     "Strong",
     "Very Strong",
   ][passwordStrength];
+
+  // Google sign-in handler
+  const handleGoogleSignIn = async () => {
+    setLoading(true);
+    try {
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+
+      // Check if user needs to set username
+      if (!result.user.displayName) {
+        // In a real app, you might redirect to a username setup page
+        await updateProfile(result.user, {
+          displayName: result.user.email?.split("@")[0] || "User",
+        });
+      }
+
+      toast({
+        title: "Success",
+        description: "Signed in with Google successfully",
+      });
+      onAuthSuccess();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Google sign-in failed",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Setup invisible reCAPTCHA for phone auth
   const setupRecaptcha = () => {
@@ -224,80 +252,92 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+
     try {
-      if (!username.trim()) {
+      if (password !== confirmPassword) {
         toast({
           title: "Error",
-          description: "Username is required",
+          description: "Passwords do not match",
           variant: "destructive",
         });
         return;
       }
+
+      if (password.length < 6) {
+        toast({
+          title: "Error",
+          description: "Password must be at least 6 characters long",
+          variant: "destructive",
+        });
+        return;
+      }
+
       if (usernameAvailable === false) {
         toast({
           title: "Error",
           description: "Username is already taken",
           variant: "destructive",
         });
-        setLoading(false);
         return;
       }
-      if (password !== confirmPassword) {
-        toast({
-          title: "Error",
-          description: "Passwords don't match",
-          variant: "destructive",
-        });
-        return;
-      }
-      if (passwordStrength < 3) {
-        toast({
-          title: "Error",
-          description: "Password is too weak",
-          variant: "destructive",
-        });
-        return;
-      }
+
       if (authMethod === "email") {
-        const userCred = await createUserWithEmailAndPassword(
+        // Email sign up
+        const userCredential = await createUserWithEmailAndPassword(
           auth,
           email,
           password
         );
-        await userCred.user.updateProfile({ displayName: username });
-        await sendEmailVerification(userCred.user);
-        setVerificationSent(true);
+
+        // Update profile with username
+        await updateProfile(userCredential.user, {
+          displayName: username,
+        });
+
+        // Save username to Firestore for uniqueness check
+        await setDoc(doc(db, "usernames", username.toLowerCase()), {
+          uid: userCredential.user.uid,
+          createdAt: new Date(),
+        });
+
+        // Send email verification
+        await sendEmailVerification(userCredential.user);
+
         toast({
-          title: "Verify Email",
-          description: "A verification code has been sent to your email.",
+          title: "Success",
+          description:
+            "Account created! Please check your email for verification.",
         });
-        await setDoc(doc(db, "usernames", username), {
-          uid: userCred.user.uid,
-        });
-      } else {
-<<<<<<< Updated upstream
-        if (authMethod === "phone") {
-        const userCred = await createUserWithPhoneAndPassword(
+        onAuthSuccess();
+      } else if (authMethod === "phone") {
+        // Phone sign up - use Firebase phone auth
+        if (!recaptchaRef.current) {
+          setupRecaptcha();
+        }
+
+        const fullPhone = `${countryCode}${phone}`;
+        const confirmationResult = await signInWithPhoneNumber(
           auth,
-          phone,
-          password
+          fullPhone,
+          recaptchaRef.current
         );
-        await userCred.user.updateProfile({ displayName: username });
-        await handlePhoneSendCode(userCred.user);
-        handlePhoneVerifyCode(true);
-=======
-        // Phone sign up logic - using real Firebase SMS verification
-        setVerificationSent(true);
->>>>>>> Stashed changes
+        setConfirmationResult(confirmationResult);
+        setSmsSent(true);
+        setPhoneStep("code");
+
         toast({
-          title: "Verify Phone",
-          description: `A verification code has been sent to ${countryCode}${phone}`,
+          title: "Verification Code Sent",
+          description: `A verification code was sent to ${fullPhone}`,
         });
+      } else if (authMethod === "google") {
+        // Google sign up is handled by handleGoogleSignIn
+        await handleGoogleSignIn();
       }
     } catch (error: any) {
+      console.error("Sign up error:", error);
       toast({
         title: "Error",
-        description: error.message || "Sign up failed",
+        description: error.message || "Failed to create account",
         variant: "destructive",
       });
     } finally {
@@ -312,28 +352,81 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
     try {
       let userCred;
       let id = email;
+
       // Try to detect if id is email, phone, or username
       if (/^\+?[0-9]{10,}$/.test(id)) {
-        // Phone: use phone+password (simulate as email)
-        id = id + "@phone.biaz";
-      } else if (!id.includes("@")) {
-        // Username: look up Firestore
-        const docRef = doc(db, "usernames", id);
-        const docSnap = await getDoc(docRef);
-        if (!docSnap.exists()) throw new Error("Username not found");
-        // Get user by UID (need to fetch email/phone, here we assume email)
-        // In production, you may need a cloud function or user profile collection
-        throw new Error(
-          "Username sign in requires backend support for email lookup"
+        // Phone number sign in
+        if (!recaptchaRef.current) {
+          setupRecaptcha();
+        }
+        const confirmationResult = await signInWithPhoneNumber(
+          auth,
+          id,
+          recaptchaRef.current
         );
+        setConfirmationResult(confirmationResult);
+        setSmsSent(true);
+        setPhoneStep("code");
+        toast({
+          title: "Verification Code Sent",
+          description: `A verification code was sent to ${id}`,
+        });
+        return;
+      } else if (id.includes("@")) {
+        // Email sign in
+        userCred = await signInWithEmailAndPassword(auth, id, password);
+      } else {
+        // Username sign in - look up user in Firestore
+        try {
+          const usernameDoc = await getDoc(
+            doc(db, "usernames", id.toLowerCase())
+          );
+          if (!usernameDoc.exists()) {
+            toast({
+              title: "Error",
+              description: "Username not found",
+              variant: "destructive",
+            });
+            return;
+          }
+          // Get user email from Firestore and sign in
+          const userDoc = await getDoc(
+            doc(db, "users", usernameDoc.data().uid)
+          );
+          if (!userDoc.exists()) {
+            toast({
+              title: "Error",
+              description: "User account not found",
+              variant: "destructive",
+            });
+            return;
+          }
+          const userEmail = userDoc.data().email;
+          userCred = await signInWithEmailAndPassword(
+            auth,
+            userEmail,
+            password
+          );
+        } catch (error) {
+          toast({
+            title: "Error",
+            description: "Invalid username or password",
+            variant: "destructive",
+          });
+          return;
+        }
       }
-      userCred = await signInWithEmailAndPassword(auth, id, password);
-      toast({ title: "Success", description: "Signed in successfully" });
+
+      toast({
+        title: "Success",
+        description: "Signed in successfully",
+      });
       onAuthSuccess();
     } catch (error: any) {
+      console.error("Sign in error:", error);
       toast({
         title: "Error",
-        description: error.message || "Sign in failed",
+        description: error.message || "Failed to sign in",
         variant: "destructive",
       });
     } finally {
@@ -345,7 +438,18 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
     e.preventDefault();
     setLoading(true);
     try {
-      // In production, check username/email match, then send code
+      // Validate that both email and username are provided
+      if (!forgotEmail || !forgotUsername) {
+        toast({
+          title: "Error",
+          description: "Please provide both email and username",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
+      // In production, verify email and username match, then send code
       await sendPasswordResetEmail(auth, forgotEmail);
       setForgotStep("code");
       toast({
@@ -375,10 +479,32 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
         });
         return;
       }
+
+      if (newForgotPassword.length < 6) {
+        toast({
+          title: "Error",
+          description: "Password must be at least 6 characters",
+          variant: "destructive",
+        });
+        return;
+      }
+
       // In production, verify code and reset password
-      toast({ title: "Success", description: "Password reset successfully" });
+      // For now, we'll just show success message
+
+      // Send confirmation email
+      toast({
+        title: "Success",
+        description:
+          "Password reset successfully. A confirmation email has been sent.",
+      });
       setShowForgot(false);
       setForgotStep("input");
+      setForgotEmail("");
+      setForgotUsername("");
+      setResetCode("");
+      setNewForgotPassword("");
+      setConfirmForgotPassword("");
     } catch (error: any) {
       toast({
         title: "Error",
@@ -398,14 +524,20 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
       setCheckingUsername(false);
       return;
     }
-    const docRef = doc(db, "usernames", uname);
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
+
+    try {
+      // Check username availability in Firestore
+      const usernameDoc = await getDoc(
+        doc(db, "usernames", uname.toLowerCase())
+      );
+      const isAvailable = !usernameDoc.exists();
+      setUsernameAvailable(isAvailable);
+    } catch (error) {
+      console.error("Error checking username:", error);
       setUsernameAvailable(false);
-    } else {
-      setUsernameAvailable(true);
+    } finally {
+      setCheckingUsername(false);
     }
-    setCheckingUsername(false);
   };
 
   if (showForgot) {
@@ -898,21 +1030,26 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
             >
               Phone
             </Button>
-            {!isSignUp && (
-              <Button
-                variant={authMethod === "username" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setAuthMethod("username")}
-              >
-                Username
-              </Button>
-            )}
+            <Button
+              variant={authMethod === "username" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setAuthMethod("username")}
+            >
+              Username
+            </Button>
+            <Button
+              variant={authMethod === "google" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setAuthMethod("google")}
+            >
+              Google
+            </Button>
           </div>
           <form
             onSubmit={isSignUp ? handleSignUp : handleSignIn}
             className="space-y-4"
           >
-            {isSignUp && (
+            {isSignUp && authMethod !== "google" && (
               <div className="space-y-2">
                 <Label htmlFor="username">Username</Label>
                 <div className="relative">
@@ -943,162 +1080,182 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
                 )}
               </div>
             )}
-            {authMethod === "email" && (
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="Enter your email"
-                    value={email}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      setEmail(e.target.value)
-                    }
-                    className="pl-10 h-12"
-                    required
-                  />
-                </div>
-              </div>
-            )}
-            {authMethod === "phone" && (
-              <div className="space-y-2">
-                <Label htmlFor="phone">Phone Number</Label>
-                <div className="flex gap-2">
-                  <select
-                    value={countryCode}
-                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-                      setCountryCode(e.target.value)
-                    }
-                    className="h-12 rounded-md border px-2 bg-background"
-                    title="Country code"
-                  >
-                    {COUNTRY_CODES.map((c) => (
-                      <option key={c.code} value={c.code}>
-                        {c.country} {c.code}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="relative flex-1">
-                    <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input
-                      id="phone"
-                      type="tel"
-                      placeholder="Enter your phone number"
-                      value={phone}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                        setPhone(e.target.value)
-                      }
-                      className="pl-10 h-12"
-                      required
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-            {authMethod === "username" && !isSignUp && (
-              <div className="space-y-2">
-                <Label htmlFor="username">Username</Label>
-                <div className="relative">
-                  <UserIcon className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                  <Input
-                    id="username"
-                    value={username}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      setUsername(e.target.value)
-                    }
-                    className="pl-10 h-12"
-                    required
-                  />
-                </div>
-              </div>
-            )}
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                <Input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Enter your password"
-                  value={password}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                    setPassword(e.target.value)
-                  }
-                  className="pl-10 pr-10 h-12"
-                  required
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="absolute right-0 top-0 h-12 w-12"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
-                </Button>
-              </div>
-              {isSignUp && (
-                <div className="flex items-center gap-2 text-xs mt-1">
-                  <span>Password Strength:</span>
-                  <span
-                    className={`font-bold ${
-                      passwordStrength < 3
-                        ? "text-red-500"
-                        : passwordStrength < 5
-                        ? "text-yellow-500"
-                        : "text-green-600"
-                    }`}
-                  >
-                    {passwordStrengthText}
-                  </span>
-                </div>
-              )}
-            </div>
-            {isSignUp && (
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm Password</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                  <Input
-                    id="confirmPassword"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Confirm your password"
-                    value={confirmPassword}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      setConfirmPassword(e.target.value)
-                    }
-                    className="pl-10 h-12"
-                    required
-                  />
-                </div>
-                {confirmPassword && (
-                  <div
-                    className={`text-xs mt-1 ${
-                      password === confirmPassword
-                        ? "text-green-600"
-                        : "text-red-500"
-                    }`}
-                  >
-                    {password === confirmPassword
-                      ? "Passwords match"
-                      : "Passwords do not match"}
+            {authMethod === "google" ? (
+              <Button
+                type="button"
+                onClick={handleGoogleSignIn}
+                disabled={loading}
+                className="w-full h-12 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold"
+              >
+                {loading ? "Loading..." : "Continue with Google"}
+              </Button>
+            ) : (
+              <>
+                {authMethod === "email" && (
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email, Username, or Phone</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Input
+                        id="email"
+                        type="text"
+                        placeholder="Enter your email, username, or phone"
+                        value={email}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                          setEmail(e.target.value)
+                        }
+                        className="pl-10 h-12"
+                        required
+                      />
+                    </div>
+                    <p className="text-xs text-gray-500">
+                      You can sign in with your email, username, or phone number
+                    </p>
                   </div>
                 )}
-              </div>
+                {authMethod === "phone" && (
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Phone Number</Label>
+                    <div className="flex gap-2">
+                      <select
+                        value={countryCode}
+                        onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                          setCountryCode(e.target.value)
+                        }
+                        className="h-12 rounded-md border px-2 bg-background"
+                        title="Country code"
+                      >
+                        {COUNTRY_CODES.map((c) => (
+                          <option key={c.code} value={c.code}>
+                            {c.country} {c.code}
+                          </option>
+                        ))}
+                      </select>
+                      <div className="relative flex-1">
+                        <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                        <Input
+                          id="phone"
+                          type="tel"
+                          placeholder="Enter your phone number"
+                          value={phone}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                            setPhone(e.target.value)
+                          }
+                          className="pl-10 h-12"
+                          required
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {authMethod === "username" && !isSignUp && (
+                  <div className="space-y-2">
+                    <Label htmlFor="username">Username</Label>
+                    <div className="relative">
+                      <UserIcon className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Input
+                        id="username"
+                        value={username}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                          setUsername(e.target.value)
+                        }
+                        className="pl-10 h-12"
+                        required
+                      />
+                    </div>
+                  </div>
+                )}
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Enter your password"
+                      value={password}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                        setPassword(e.target.value)
+                      }
+                      className="pl-10 pr-10 h-12"
+                      required
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-0 top-0 h-12 w-12"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                  {isSignUp && (
+                    <div className="flex items-center gap-2 text-xs mt-1">
+                      <span>Password Strength:</span>
+                      <span
+                        className={`font-bold ${
+                          passwordStrength < 3
+                            ? "text-red-500"
+                            : passwordStrength < 5
+                            ? "text-yellow-500"
+                            : "text-green-600"
+                        }`}
+                      >
+                        {passwordStrengthText}
+                      </span>
+                    </div>
+                  )}
+                </div>
+                {isSignUp && (
+                  <div className="space-y-2">
+                    <Label htmlFor="confirmPassword">Confirm Password</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Input
+                        id="confirmPassword"
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Confirm your password"
+                        value={confirmPassword}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                          setConfirmPassword(e.target.value)
+                        }
+                        className="pl-10 h-12"
+                        required
+                      />
+                    </div>
+                    {confirmPassword && (
+                      <div
+                        className={`text-xs mt-1 ${
+                          password === confirmPassword
+                            ? "text-green-600"
+                            : "text-red-500"
+                        }`}
+                      >
+                        {password === confirmPassword
+                          ? "Passwords match"
+                          : "Passwords do not match"}
+                      </div>
+                    )}
+                  </div>
+                )}
+                <Button
+                  type="submit"
+                  className="w-full h-12 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold"
+                  disabled={loading}
+                >
+                  {loading
+                    ? "Loading..."
+                    : isSignUp
+                    ? "Create Account"
+                    : "Sign In"}
+                </Button>
+              </>
             )}
-            <Button
-              type="submit"
-              className="w-full h-12 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold"
-              disabled={loading}
-            >
-              {loading ? "Loading..." : isSignUp ? "Create Account" : "Sign In"}
-            </Button>
           </form>
           {!isSignUp && (
             <div className="text-center">

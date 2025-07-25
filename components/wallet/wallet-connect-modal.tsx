@@ -226,13 +226,13 @@ export function WalletConnectModal({
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* Popular Wallets Section */}
+          {/* All Wallets Section */}
           <div>
             <h3 className="text-sm font-semibold text-gray-700 mb-3">
-              Popular Wallets
+              Connect Your Wallet
             </h3>
             <div className="space-y-2">
-              {SUPPORTED_WALLETS.filter((w) => w.popular).map((wallet) => {
+              {SUPPORTED_WALLETS.map((wallet) => {
                 const status = getWalletStatus(wallet);
                 return (
                   <Card
@@ -276,65 +276,6 @@ export function WalletConnectModal({
                             </Button>
                           ) : status === "available" ? (
                             <CheckCircle className="w-5 h-5 text-green-500" />
-                          ) : (
-                            <ExternalLink className="w-4 h-4 text-gray-400" />
-                          )}
-                        </div>
-                      </Button>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* All Wallets Section */}
-          <div>
-            <h3 className="text-sm font-semibold text-gray-700 mb-3">
-              All Wallets
-            </h3>
-            <div className="space-y-2">
-              {SUPPORTED_WALLETS.filter((w) => !w.popular).map((wallet) => {
-                const status = getWalletStatus(wallet);
-                return (
-                  <Card
-                    key={wallet.id}
-                    className="cursor-pointer hover:bg-gray-50 transition-all duration-200"
-                  >
-                    <CardContent className="p-3">
-                      <Button
-                        variant="ghost"
-                        className="w-full justify-start h-auto p-0"
-                        onClick={() => handleWalletConnect(wallet)}
-                        disabled={status === "unsupported" || isPending}
-                      >
-                        <div className="flex items-center space-x-3 w-full">
-                          <div className="flex items-center justify-center w-10 h-10 bg-gray-100 rounded-lg">
-                            <span className="text-xl">{wallet.icon}</span>
-                          </div>
-                          <div className="flex-1 text-left">
-                            <div className="flex items-center gap-2">
-                              <p className="font-medium text-sm">
-                                {wallet.name}
-                              </p>
-                              {getStatusBadge(status)}
-                            </div>
-                            <p className="text-xs text-gray-500">
-                              {wallet.description}
-                            </p>
-                          </div>
-                          {status === "not-detected" ? (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                window.open(wallet.url, "_blank");
-                              }}
-                              className="text-xs"
-                            >
-                              Install
-                            </Button>
                           ) : (
                             <ExternalLink className="w-4 h-4 text-gray-400" />
                           )}

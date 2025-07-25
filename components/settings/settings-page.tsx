@@ -34,13 +34,16 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { useTheme } from "next-themes";
-import { auth } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
 import {
   EmailAuthProvider,
   PhoneAuthProvider,
   linkWithCredential,
   updateProfile,
+  reauthenticateWithCredential,
+  updatePassword,
 } from "firebase/auth";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 
 interface SettingsPageProps {
   onBack?: () => void;
@@ -52,11 +55,6 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
   const { toast } = useToast();
 
   // State for various settings
-  const [phoneNumber, setPhoneNumber] = useState("");
-  const [isPhoneVerified, setIsPhoneVerified] = useState(false);
-  const [verificationCode, setVerificationCode] = useState("");
-  const [isVerifying, setIsVerifying] = useState(false);
-  const [showVerificationInput, setShowVerificationInput] = useState(false);
   const [profilePicModalOpen, setProfilePicModalOpen] = useState(false);
 
   // Password change state
@@ -66,16 +64,13 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
   const [showPasswords, setShowPasswords] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
 
-  // 2FA state
-  const [is2FAEnabled, setIs2FAEnabled] = useState(false);
-  const [qrCodeUrl, setQrCodeUrl] = useState("");
-  const [twoFactorCode, setTwoFactorCode] = useState("");
-  const [isEnabling2FA, setIsEnabling2FA] = useState(false);
-
-  // Notification settings
-  const [emailNotifications, setEmailNotifications] = useState(true);
-  const [pushNotifications, setPushNotifications] = useState(true);
-  const [transactionAlerts, setTransactionAlerts] = useState(true);
+  // Username editing state
+  const [editingUsername, setEditingUsername] = useState(false);
+  const [newUsername, setNewUsername] = useState("");
+  const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(
+    null
+  );
+  const [checkingUsername, setCheckingUsername] = useState(false);
 
   // Add state for email linking
   const [newEmail, setNewEmail] = useState("");
@@ -92,14 +87,96 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
   const [phoneStep, setPhoneStep] = useState<"input" | "code">("input");
   const recaptchaRef = useRef<any>(null);
 
-  // Remove the mock phone verification functions and replace with real Firebase implementations
-  // Remove these functions:
-  // - handlePhoneVerification (mock)
-  // - handleVerifyCode (mock)
+  // Real-time username uniqueness check
+  const checkUsername = async (uname: string) => {
+    setCheckingUsername(true);
+    if (!uname) {
+      setUsernameAvailable(null);
+      setCheckingUsername(false);
+      return;
+    }
 
-  // Keep the real Firebase implementations:
-  // - handleSendPhoneCode (real Firebase)
-  // - handleVerifyPhoneCode (real Firebase)
+    try {
+      // Check username availability in Firestore
+      const usernameDoc = await getDoc(
+        doc(db, "usernames", uname.toLowerCase())
+      );
+      const isAvailable = !usernameDoc.exists();
+      setUsernameAvailable(isAvailable);
+    } catch (error) {
+      console.error("Error checking username:", error);
+      setUsernameAvailable(false);
+    } finally {
+      setCheckingUsername(false);
+    }
+  };
+
+  const handleUsernameUpdate = async () => {
+    if (!newUsername.trim()) {
+      toast({
+        title: "Error",
+        description: "Username cannot be empty",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (usernameAvailable === false) {
+      toast({
+        title: "Error",
+        description: "Username is already taken",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (newUsername.length < 3) {
+      toast({
+        title: "Error",
+        description: "Username must be at least 3 characters long",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (newUsername.length > 20) {
+      toast({
+        title: "Error",
+        description: "Username must be less than 20 characters",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // Update username in Firestore
+      await setDoc(doc(db, "usernames", newUsername.toLowerCase()), {
+        uid: user?.uid,
+        createdAt: new Date(),
+      });
+
+      // Update user profile
+      if (user) {
+        await updateProfile(user, {
+          displayName: newUsername,
+        });
+      }
+
+      setEditingUsername(false);
+      setNewUsername("");
+      setUsernameAvailable(null);
+      toast({
+        title: "Success",
+        description: "Username updated successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update username",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handlePasswordChange = async () => {
     if (!currentPassword || !newPassword || !confirmPassword) {
@@ -131,8 +208,17 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
 
     setIsChangingPassword(true);
     try {
-      // Simulate password change API call
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      // Change password using Firebase
+      if (!auth.currentUser) throw new Error("Not authenticated");
+
+      const credential = EmailAuthProvider.credential(
+        auth.currentUser.email!,
+        currentPassword
+      );
+
+      await reauthenticateWithCredential(auth.currentUser, credential);
+      await updatePassword(auth.currentUser, newPassword);
+
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
@@ -140,10 +226,10 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
         title: "Success",
         description: "Password changed successfully",
       });
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Error",
-        description: "Failed to change password",
+        description: error.message || "Failed to change password",
         variant: "destructive",
       });
     } finally {
@@ -152,26 +238,15 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
   };
 
   const handleEnable2FA = async () => {
-    setIsEnabling2FA(true);
-    try {
-      // Simulate 2FA setup
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      setQrCodeUrl(
-        "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=otpauth://totp/CryptoExchange:user@example.com?secret=JBSWY3DPEHPK3PXP&issuer=CryptoExchange"
-      );
-      toast({
-        title: "2FA Setup",
-        description: "Scan the QR code with your authenticator app",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to setup 2FA",
-        variant: "destructive",
-      });
-    } finally {
-      setIsEnabling2FA(false);
-    }
+    // In production, implement real 2FA setup
+    // This would typically involve:
+    // 1. Generate a secret key
+    // 2. Create QR code for authenticator apps
+    // 3. Verify the setup with a test code
+    toast({
+      title: "2FA Setup",
+      description: "2FA setup will be available in production",
+    });
   };
 
   const handleConfirm2FA = async () => {
@@ -184,47 +259,26 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
       return;
     }
 
-    try {
-      // Simulate 2FA confirmation
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      setIs2FAEnabled(true);
-      setQrCodeUrl("");
-      setTwoFactorCode("");
-      toast({
-        title: "Success",
-        description: "Two-factor authentication enabled",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Invalid code. Please try again",
-        variant: "destructive",
-      });
-    }
+    // In production, verify the 2FA code
+    toast({
+      title: "2FA Setup",
+      description: "2FA verification will be available in production",
+    });
   };
 
   const handleDisable2FA = async () => {
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      setIs2FAEnabled(false);
-      toast({
-        title: "Success",
-        description: "Two-factor authentication disabled",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to disable 2FA",
-        variant: "destructive",
-      });
-    }
+    // In production, disable 2FA
+    toast({
+      title: "2FA Setup",
+      description: "2FA disable will be available in production",
+    });
   };
 
   const handleProfilePicUpload = async () => {
-    // Mock profile picture upload
+    // In production, implement real profile picture upload
     toast({
-      title: "Coming Soon",
-      description: "Profile picture upload will be available soon",
+      title: "Profile Picture",
+      description: "Profile picture upload will be available in production",
     });
     setProfilePicModalOpen(false);
   };
@@ -411,6 +465,77 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
           <CardHeader className="mobile-container pb-2">
             <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
               <User className="w-4 h-4 sm:w-5 sm:h-5" />
+              Username
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="mobile-container pt-0 space-y-4">
+            <div>
+              <Label className="text-sm sm:text-base">Current Username</Label>
+              <div className="flex items-center gap-2 mt-1">
+                <Input
+                  value={user?.displayName || "Not set"}
+                  readOnly
+                  className="bg-gray-50 text-sm sm:text-base"
+                />
+                <Badge
+                  variant="secondary"
+                  className="bg-blue-100 text-blue-800 text-xs"
+                >
+                  {user?.displayName || "Not set"}
+                </Badge>
+              </div>
+            </div>
+            {editingUsername ? (
+              <form onSubmit={handleUsernameUpdate} className="space-y-2">
+                <Input
+                  type="text"
+                  placeholder="New username"
+                  value={newUsername}
+                  onChange={(e) => setNewUsername(e.target.value)}
+                  onBlur={() => checkUsername(newUsername)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      handleUsernameUpdate();
+                    }
+                  }}
+                  className="text-sm sm:text-base"
+                />
+                <Badge
+                  variant={
+                    usernameAvailable === true ? "default" : "destructive"
+                  }
+                  className="text-xs"
+                >
+                  {usernameAvailable === true
+                    ? "Username available"
+                    : usernameAvailable === false
+                    ? "Username is already taken"
+                    : "Check username availability"}
+                </Badge>
+                <Button type="submit" disabled={checkingUsername}>
+                  {checkingUsername ? "Checking..." : "Update Username"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setEditingUsername(false)}
+                >
+                  Cancel
+                </Button>
+              </form>
+            ) : (
+              <Button onClick={() => setEditingUsername(true)}>
+                Change Username
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Email */}
+        <Card className="mobile-card shadow-lg">
+          <CardHeader className="mobile-container pb-2">
+            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+              <User className="w-4 h-4 sm:w-5 sm:h-5" />
               Email
             </CardTitle>
           </CardHeader>
@@ -450,74 +575,6 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
             ) : (
               <Button onClick={() => setEmailEditMode(true)}>
                 {user?.email ? "Change Email" : "Add Email"}
-              </Button>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Phone */}
-        <Card className="mobile-card shadow-lg">
-          <CardHeader className="mobile-container pb-2">
-            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-              <Phone className="w-4 h-4 sm:w-5 sm:h-5" />
-              Phone
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="mobile-container pt-0 space-y-4">
-            {user?.phoneNumber && (
-              <div>
-                Current: <span className="font-medium">{user.phoneNumber}</span>
-              </div>
-            )}
-            {phoneEditMode ? (
-              phoneStep === "input" ? (
-                <form onSubmit={handleSendPhoneCode} className="space-y-2">
-                  <Input
-                    type="tel"
-                    placeholder="New phone number"
-                    value={newPhone}
-                    onChange={(e) => setNewPhone(e.target.value)}
-                    required
-                  />
-                  <div id="recaptcha-container-settings" />
-                  <Button type="submit" disabled={phoneLoading}>
-                    {phoneLoading ? "Sending..." : "Send Code"}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setPhoneEditMode(false)}
-                  >
-                    Cancel
-                  </Button>
-                </form>
-              ) : (
-                <form onSubmit={handleVerifyPhoneCode} className="space-y-2">
-                  <Input
-                    type="text"
-                    placeholder="Verification code"
-                    value={phoneCode}
-                    onChange={(e) => setPhoneCode(e.target.value)}
-                    required
-                  />
-                  <Button type="submit" disabled={phoneLoading}>
-                    {phoneLoading ? "Verifying..." : "Verify & Link"}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      setPhoneStep("input");
-                      setPhoneCode("");
-                    }}
-                  >
-                    Back
-                  </Button>
-                </form>
-              )
-            ) : (
-              <Button onClick={() => setPhoneEditMode(true)}>
-                {user?.phoneNumber ? "Change Phone" : "Add Phone"}
               </Button>
             )}
           </CardContent>
@@ -618,142 +675,6 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
             >
               {isChangingPassword ? "Changing Password..." : "Change Password"}
             </Button>
-          </CardContent>
-        </Card>
-
-        {/* Two-Factor Authentication */}
-        <Card className="mobile-card shadow-lg">
-          <CardHeader className="mobile-container pb-2">
-            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-              <Shield className="w-4 h-4 sm:w-5 sm:h-5" />
-              Two-Factor Authentication
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="mobile-container pt-0 space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <Label className="text-sm sm:text-base font-medium">
-                  2FA Status
-                </Label>
-                <p className="text-xs sm:text-sm text-gray-600 mt-1">
-                  {is2FAEnabled
-                    ? "Enhanced security is active"
-                    : "Add an extra layer of security"}
-                </p>
-              </div>
-              <Badge
-                variant={is2FAEnabled ? "default" : "secondary"}
-                className="text-xs"
-              >
-                {is2FAEnabled ? "Enabled" : "Disabled"}
-              </Badge>
-            </div>
-
-            {!is2FAEnabled ? (
-              <div className="space-y-4">
-                <Button
-                  onClick={handleEnable2FA}
-                  disabled={isEnabling2FA}
-                  className="w-full touch-target"
-                >
-                  {isEnabling2FA ? "Setting up..." : "Enable 2FA"}
-                </Button>
-
-                {qrCodeUrl && (
-                  <div className="text-center space-y-4">
-                    <img
-                      src={qrCodeUrl}
-                      alt="2FA QR Code"
-                      className="mx-auto max-w-[200px] w-full h-auto"
-                    />
-                    <div>
-                      <Label className="text-sm sm:text-base">
-                        Enter code from authenticator app
-                      </Label>
-                      <div className="flex flex-col sm:flex-row gap-2 mt-1">
-                        <Input
-                          placeholder="123456"
-                          value={twoFactorCode}
-                          onChange={(e) => setTwoFactorCode(e.target.value)}
-                          maxLength={6}
-                          className="text-sm sm:text-base flex-1"
-                        />
-                        <Button
-                          onClick={handleConfirm2FA}
-                          className="touch-target"
-                        >
-                          Confirm
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <Button
-                variant="destructive"
-                onClick={handleDisable2FA}
-                className="w-full touch-target"
-              >
-                Disable 2FA
-              </Button>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Notification Settings */}
-        <Card className="mobile-card shadow-lg">
-          <CardHeader className="mobile-container pb-2">
-            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-              <Bell className="w-4 h-4 sm:w-5 sm:h-5" />
-              Notifications
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="mobile-container pt-0 space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <Label className="text-sm sm:text-base font-medium">
-                  Email Notifications
-                </Label>
-                <p className="text-xs sm:text-sm text-gray-600 mt-1">
-                  Receive updates via email
-                </p>
-              </div>
-              <Switch
-                checked={emailNotifications}
-                onCheckedChange={setEmailNotifications}
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div>
-                <Label className="text-sm sm:text-base font-medium">
-                  Push Notifications
-                </Label>
-                <p className="text-xs sm:text-sm text-gray-600 mt-1">
-                  Browser push notifications
-                </p>
-              </div>
-              <Switch
-                checked={pushNotifications}
-                onCheckedChange={setPushNotifications}
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div>
-                <Label className="text-sm sm:text-base font-medium">
-                  Transaction Alerts
-                </Label>
-                <p className="text-xs sm:text-sm text-gray-600 mt-1">
-                  Notifications for wallet activity
-                </p>
-              </div>
-              <Switch
-                checked={transactionAlerts}
-                onCheckedChange={setTransactionAlerts}
-              />
-            </div>
           </CardContent>
         </Card>
       </div>

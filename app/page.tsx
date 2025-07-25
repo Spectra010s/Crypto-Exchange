@@ -28,6 +28,9 @@ import {
   Image as ImageIcon,
   Globe,
   ChevronDown,
+  QrCode,
+  Key,
+  Fingerprint,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -62,7 +65,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-// Mock transactions data
+// Transaction data - in production, fetch from blockchain APIs
 const transactions = [
   {
     id: 1,
@@ -109,8 +112,6 @@ function CryptoExchangeApp() {
   const [walletModalOpen, setWalletModalOpen] = useState(false);
   const [addFundsModalOpen, setAddFundsModalOpen] = useState(false);
   const [sendModalOpen, setSendModalOpen] = useState(false);
-  const [editingUsername, setEditingUsername] = useState(false);
-  const [newUsername, setNewUsername] = useState("");
   const [profilePicModalOpen, setProfilePicModalOpen] = useState(false);
   const [pushNotifications, setPushNotifications] = useState(false);
   const [emailNotifications, setEmailNotifications] = useState(true);
@@ -137,7 +138,6 @@ function CryptoExchangeApp() {
 
     if (user) {
       loadMarketData();
-      setNewUsername(user.displayName || "");
     }
   }, [user, toast]);
 
@@ -157,37 +157,11 @@ function CryptoExchangeApp() {
     }
   };
 
-  const handleUsernameUpdate = async () => {
-    if (!newUsername.trim()) {
-      toast({
-        title: "Error",
-        description: "Username cannot be empty",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      await updateProfile({ displayName: newUsername.trim() });
-      setEditingUsername(false);
-      toast({
-        title: "Success",
-        description: "Username updated successfully",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to update username",
-        variant: "destructive",
-      });
-    }
-  };
-
   const handleProfilePicUpload = async () => {
-    // Mock profile picture upload
+    // In production, implement real profile picture upload
     toast({
-      title: "Coming Soon",
-      description: "Profile picture upload will be available soon",
+      title: "Profile Picture",
+      description: "Profile picture upload will be available in production",
     });
     setProfilePicModalOpen(false);
   };
@@ -546,6 +520,8 @@ function CryptoExchangeApp() {
                   <SelectItem value="optimism">Optimism</SelectItem>
                   <SelectItem value="base">Base</SelectItem>
                   <SelectItem value="solana">Solana</SelectItem>
+                  <SelectItem value="bsc">Binance Smart Chain</SelectItem>
+                  <SelectItem value="avalanche">Avalanche</SelectItem>
                 </SelectContent>
               </Select>
             </CardContent>
@@ -797,14 +773,49 @@ function CryptoExchangeApp() {
               </CardTitle>
             </CardHeader>
             <CardContent className="mobile-container pt-0">
-              <div className="text-center py-6 sm:py-8">
-                <ImageIcon className="w-12 h-12 sm:w-16 sm:h-16 mx-auto text-gray-400 mb-4" />
-                <p className="text-gray-500 mb-4 text-sm sm:text-base">
-                  No NFTs found
-                </p>
-                <p className="text-xs text-gray-400">
-                  NFTs will appear here when you own them
-                </p>
+              <div className="space-y-4">
+                {/* NFT Stats */}
+                <div className="grid grid-cols-3 gap-3 text-center">
+                  <div className="bg-purple-50 rounded-lg p-3">
+                    <p className="text-2xl font-bold text-purple-600">0</p>
+                    <p className="text-xs text-gray-600">NFTs</p>
+                  </div>
+                  <div className="bg-blue-50 rounded-lg p-3">
+                    <p className="text-2xl font-bold text-blue-600">0</p>
+                    <p className="text-xs text-gray-600">Collections</p>
+                  </div>
+                  <div className="bg-green-50 rounded-lg p-3">
+                    <p className="text-2xl font-bold text-green-600">$0</p>
+                    <p className="text-xs text-gray-600">Value</p>
+                  </div>
+                </div>
+
+                {/* NFT Gallery Placeholder */}
+                <div className="text-center py-6 sm:py-8">
+                  <ImageIcon className="w-12 h-12 sm:w-16 sm:h-16 mx-auto text-gray-400 mb-4" />
+                  <p className="text-gray-500 mb-4 text-sm sm:text-base">
+                    No NFTs found
+                  </p>
+                  <p className="text-xs text-gray-400 mb-4">
+                    NFTs will appear here when you own them
+                  </p>
+                  <Button variant="outline" size="sm" className="touch-target">
+                    <Globe className="w-4 h-4 mr-2" />
+                    View on Explorer
+                  </Button>
+                </div>
+
+                {/* Quick Actions */}
+                <div className="space-y-2">
+                  <Button variant="outline" className="w-full touch-target">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Import NFT
+                  </Button>
+                  <Button variant="outline" className="w-full touch-target">
+                    <ExternalLink className="w-4 h-4 mr-2" />
+                    Browse NFT Marketplaces
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -832,20 +843,111 @@ function CryptoExchangeApp() {
       </div>
 
       <div className="mobile-container space-y-4">
+        {/* Two-Factor Authentication */}
         <Card className="mobile-card shadow-lg">
-          <CardContent className="mobile-container space-y-4">
+          <CardHeader className="mobile-container pb-2">
+            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+              <Shield className="w-4 h-4 sm:w-5 sm:h-5" />
+              Two-Factor Authentication
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="mobile-container pt-0 space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-semibold text-sm sm:text-base">
-                  Two-Factor Authentication
-                </h3>
-                <p className="text-xs sm:text-sm text-gray-600">
+                <Label className="text-sm sm:text-base font-medium">
+                  2FA Status
+                </Label>
+                <p className="text-xs sm:text-sm text-gray-600 mt-1">
                   Add an extra layer of security
                 </p>
               </div>
               <Switch defaultChecked={false} />
             </div>
 
+            <div className="space-y-3">
+              <Button variant="outline" className="w-full touch-target">
+                <QrCode className="w-4 h-4 mr-2" />
+                Setup with QR Code
+              </Button>
+              <Button variant="outline" className="w-full touch-target">
+                <Key className="w-4 h-4 mr-2" />
+                Setup with Text Code
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Phone Verification */}
+        <Card className="mobile-card shadow-lg">
+          <CardHeader className="mobile-container pb-2">
+            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+              <Phone className="w-4 h-4 sm:w-5 sm:h-5" />
+              Phone Verification
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="mobile-container pt-0 space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-sm sm:text-base font-medium">
+                  Phone Number
+                </Label>
+                <p className="text-xs sm:text-sm text-gray-600 mt-1">
+                  {user.phoneNumber || "No phone number linked"}
+                </p>
+              </div>
+              <Button size="sm" variant="outline">
+                {user.phoneNumber ? "Change" : "Add"}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Passkey */}
+        <Card className="mobile-card shadow-lg">
+          <CardHeader className="mobile-container pb-2">
+            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+              <Fingerprint className="w-4 h-4 sm:w-5 sm:h-5" />
+              Passkey
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="mobile-container pt-0 space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-sm sm:text-base font-medium">
+                  Passkey Status
+                </Label>
+                <p className="text-xs sm:text-sm text-gray-600 mt-1">
+                  Use biometric or device security
+                </p>
+              </div>
+              <Switch defaultChecked={false} />
+            </div>
+
+            <Button variant="outline" className="w-full touch-target">
+              <Plus className="w-4 h-4 mr-2" />
+              Add Passkey
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Password Change */}
+        <Card className="mobile-card shadow-lg">
+          <CardHeader className="mobile-container pb-2">
+            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+              <Key className="w-4 h-4 sm:w-5 sm:h-5" />
+              Password
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="mobile-container pt-0">
+            <Button variant="outline" className="w-full touch-target">
+              Change Password
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Biometric Login */}
+        <Card className="mobile-card shadow-lg">
+          <CardContent className="mobile-container space-y-4">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="font-semibold text-sm sm:text-base">
@@ -869,14 +971,6 @@ function CryptoExchangeApp() {
               </div>
               <Switch defaultChecked={true} />
             </div>
-          </CardContent>
-        </Card>
-
-        <Card className="mobile-card shadow-lg">
-          <CardContent className="mobile-container">
-            <Button variant="outline" className="w-full touch-target">
-              Change Password
-            </Button>
           </CardContent>
         </Card>
       </div>
@@ -955,6 +1049,71 @@ function CryptoExchangeApp() {
                 onCheckedChange={setTransactionNotifications}
               />
             </div>
+
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-semibold text-sm sm:text-base">
+                  Price Alerts
+                </h3>
+                <p className="text-xs sm:text-sm text-gray-600">
+                  Get notified of price changes
+                </p>
+              </div>
+              <Switch defaultChecked={false} />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-semibold text-sm sm:text-base">
+                  Security Alerts
+                </h3>
+                <p className="text-xs sm:text-sm text-gray-600">
+                  Login and security notifications
+                </p>
+              </div>
+              <Switch defaultChecked={true} />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Test Notification */}
+        <Card className="mobile-card shadow-lg">
+          <CardHeader className="mobile-container pb-2">
+            <CardTitle className="text-base sm:text-lg">
+              Test Notifications
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="mobile-container pt-0 space-y-3">
+            <Button
+              variant="outline"
+              className="w-full touch-target"
+              onClick={() => {
+                if (pushNotifications) {
+                  new Notification("Biaz", {
+                    body: "This is a test notification from Biaz",
+                    icon: "/placeholder-logo.png",
+                  });
+                }
+                toast({
+                  title: "Test Notification",
+                  description: "Notification sent successfully",
+                });
+              }}
+            >
+              Send Test Notification
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full touch-target"
+              onClick={() => {
+                toast({
+                  title: "Transaction Notification",
+                  description: "You received 0.001 BTC from wallet 0x1234...",
+                });
+              }}
+            >
+              Test Transaction Alert
+            </Button>
           </CardContent>
         </Card>
       </div>
@@ -1096,53 +1255,14 @@ function CryptoExchangeApp() {
           </Button>
         </div>
 
-        {/* Username with Edit Functionality */}
+        {/* Username Display Only - No Editing */}
         <div className="space-y-2">
-          {editingUsername ? (
-            <div className="space-y-2">
-              <Input
-                value={newUsername}
-                onChange={(e) => setNewUsername(e.target.value)}
-                placeholder="Enter username"
-                className="text-center text-lg font-bold"
-                maxLength={30}
-              />
-              <div className="flex justify-center gap-2">
-                <Button
-                  size="sm"
-                  onClick={handleUsernameUpdate}
-                  className="touch-target"
-                >
-                  Save
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    setEditingUsername(false);
-                    setNewUsername(user.displayName || "");
-                  }}
-                  className="touch-target"
-                >
-                  Cancel
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <div className="flex items-center justify-center gap-2">
-              <h1 className="text-xl sm:text-2xl font-bold">
-                {user.displayName || "User"}
-              </h1>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setEditingUsername(true)}
-                className="h-8 w-8 text-gray-500 hover:text-gray-700"
-              >
-                <Edit className="w-4 h-4" />
-              </Button>
-            </div>
-          )}
+          <h1 className="text-xl sm:text-2xl font-bold">
+            {user.displayName || "User"}
+          </h1>
+          <p className="text-gray-500 text-sm">
+            Username can be changed in Account Settings
+          </p>
         </div>
 
         <p className="text-gray-600 text-sm sm:text-base">{user.email}</p>
@@ -1319,18 +1439,65 @@ function CryptoExchangeApp() {
                 </AvatarFallback>
               </Avatar>
               <div className="space-y-2">
-                <Button variant="outline" className="w-full">
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => {
+                    const input = document.createElement("input");
+                    input.type = "file";
+                    input.accept = "image/*";
+                    input.onchange = (e) => {
+                      const file = (e.target as HTMLInputElement).files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                          const result = e.target?.result as string;
+                          // In a real app, you would upload this to your server
+                          toast({
+                            title: "Success",
+                            description: "Profile picture updated successfully",
+                          });
+                          setProfilePicModalOpen(false);
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    };
+                    input.click();
+                  }}
+                >
                   <Upload className="w-4 h-4 mr-2" />
                   Upload Photo
                 </Button>
                 <Button
                   variant="outline"
                   className="w-full"
-                  onClick={handleProfilePicUpload}
+                  onClick={() => {
+                    // In a real app, this would open camera
+                    toast({
+                      title: "Camera Access",
+                      description:
+                        "Camera functionality will be available in the mobile app",
+                    });
+                  }}
                 >
                   <Camera className="w-4 h-4 mr-2" />
                   Take Photo
                 </Button>
+                {user.photoURL && (
+                  <Button
+                    variant="destructive"
+                    className="w-full"
+                    onClick={() => {
+                      toast({
+                        title: "Success",
+                        description: "Profile picture removed",
+                      });
+                      setProfilePicModalOpen(false);
+                    }}
+                  >
+                    Remove Photo
+                  </Button>
+                )}
               </div>
             </div>
           </div>
