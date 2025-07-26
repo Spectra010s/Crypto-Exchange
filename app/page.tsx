@@ -300,9 +300,6 @@ function CryptoExchangeApp() {
             <h3 className="font-semibold text-green-800 text-sm sm:text-base">
               Buy Crypto
             </h3>
-            <p className="text-xs sm:text-sm text-green-600 mt-1 flex items-center justify-center gap-1">
-              Contact Support <ExternalLink className="w-3 h-3" />
-            </p>
           </CardContent>
         </Card>
 
@@ -317,9 +314,6 @@ function CryptoExchangeApp() {
             <h3 className="font-semibold text-red-800 text-sm sm:text-base">
               Sell Crypto
             </h3>
-            <p className="text-xs sm:text-sm text-red-600 mt-1 flex items-center justify-center gap-1">
-              Contact Support <ExternalLink className="w-3 h-3" />
-            </p>
           </CardContent>
         </Card>
       </div>
@@ -843,37 +837,31 @@ function CryptoExchangeApp() {
       </div>
 
       <div className="mobile-container space-y-4">
-        {/* Two-Factor Authentication */}
+        {/* Passkey Authentication */}
         <Card className="mobile-card shadow-lg">
           <CardHeader className="mobile-container pb-2">
             <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-              <Shield className="w-4 h-4 sm:w-5 sm:h-5" />
-              Two-Factor Authentication
+              <Fingerprint className="w-4 h-4 sm:w-5 sm:h-5" />
+              Passkey Authentication
             </CardTitle>
           </CardHeader>
           <CardContent className="mobile-container pt-0 space-y-4">
             <div className="flex items-center justify-between">
               <div>
                 <Label className="text-sm sm:text-base font-medium">
-                  2FA Status
+                  Passkey Status
                 </Label>
                 <p className="text-xs sm:text-sm text-gray-600 mt-1">
-                  Add an extra layer of security
+                  Use biometric or device security
                 </p>
               </div>
               <Switch defaultChecked={false} />
             </div>
 
-            <div className="space-y-3">
-              <Button variant="outline" className="w-full touch-target">
-                <QrCode className="w-4 h-4 mr-2" />
-                Setup with QR Code
-              </Button>
-              <Button variant="outline" className="w-full touch-target">
-                <Key className="w-4 h-4 mr-2" />
-                Setup with Text Code
-              </Button>
-            </div>
+            <Button variant="outline" className="w-full touch-target">
+              <Plus className="w-4 h-4 mr-2" />
+              Add Passkey
+            </Button>
           </CardContent>
         </Card>
 
@@ -947,30 +935,29 @@ function CryptoExchangeApp() {
 
         {/* Biometric Login */}
         <Card className="mobile-card shadow-lg">
-          <CardContent className="mobile-container space-y-4">
+          <CardHeader className="mobile-container pb-2">
+            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+              <Fingerprint className="w-4 h-4 sm:w-5 sm:h-5" />
+              Biometric Login
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="mobile-container pt-0 space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-semibold text-sm sm:text-base">
-                  Biometric Login
-                </h3>
-                <p className="text-xs sm:text-sm text-gray-600">
-                  Use fingerprint or face recognition
+                <Label className="text-sm sm:text-base font-medium">
+                  Biometric Status
+                </Label>
+                <p className="text-xs sm:text-sm text-gray-600 mt-1">
+                  Use fingerprint or face recognition for login
                 </p>
               </div>
-              <Switch defaultChecked={true} />
+              <Switch defaultChecked={false} />
             </div>
 
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-semibold text-sm sm:text-base">
-                  Transaction PIN
-                </h3>
-                <p className="text-xs sm:text-sm text-gray-600">
-                  Require PIN for transactions
-                </p>
-              </div>
-              <Switch defaultChecked={true} />
-            </div>
+            <Button variant="outline" className="w-full touch-target">
+              <Plus className="w-4 h-4 mr-2" />
+              Setup Biometrics
+            </Button>
           </CardContent>
         </Card>
       </div>
@@ -1245,14 +1232,6 @@ function CryptoExchangeApp() {
               {user.displayName?.charAt(0) || user.email?.charAt(0) || "U"}
             </AvatarFallback>
           </Avatar>
-          <Button
-            variant="outline"
-            size="icon"
-            className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-white shadow-lg"
-            onClick={() => setProfilePicModalOpen(true)}
-          >
-            <Camera className="w-4 h-4" />
-          </Button>
         </div>
 
         {/* Username Display Only - No Editing */}
@@ -1297,7 +1276,7 @@ function CryptoExchangeApp() {
               <div className="text-left">
                 <p className="font-medium text-sm sm:text-base">Security</p>
                 <p className="text-xs sm:text-sm text-gray-600">
-                  Two-factor authentication, passwords
+                  Passkey authentication, biometrics
                 </p>
               </div>
             </Button>

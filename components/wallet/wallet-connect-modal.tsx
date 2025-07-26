@@ -20,6 +20,7 @@ import {
   ExternalLink,
   Download,
   CheckCircle,
+  X,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -160,138 +161,123 @@ export function WalletConnectModal({
           c.name.toLowerCase().includes(wallet.id) ||
           c.name.toLowerCase().includes(wallet.name.toLowerCase())
       );
-      return connector ? "available" : "not-detected";
+      return connector?.ready ? "available" : "unavailable";
     } else if (wallet.type === "solana") {
       const solanaWallet = wallets.find(
         (w) =>
           w.adapter.name.toLowerCase().includes(wallet.id) ||
           w.adapter.name.toLowerCase().includes(wallet.name.toLowerCase())
       );
-      if (solanaWallet) {
-        switch (solanaWallet.readyState) {
-          case WalletReadyState.Installed:
-            return "available";
-          case WalletReadyState.NotDetected:
-            return "not-detected";
-          case WalletReadyState.Loadable:
-            return "available";
-          case WalletReadyState.Unsupported:
-            return "unsupported";
-          default:
-            return "unknown";
-        }
-      }
-      return "not-detected";
+      return solanaWallet?.adapter.readyState === WalletReadyState.Installed
+        ? "available"
+        : "unavailable";
     }
-    return "unknown";
+    return "unavailable";
   };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "available":
         return (
-          <Badge variant="secondary" className="bg-green-100 text-green-800">
+          <Badge variant="secondary" className="text-xs">
             Available
           </Badge>
         );
-      case "not-detected":
+      case "unavailable":
         return (
-          <Badge variant="secondary" className="bg-gray-100 text-gray-800">
-            Install Required
-          </Badge>
-        );
-      case "unsupported":
-        return (
-          <Badge variant="secondary" className="bg-red-100 text-red-800">
-            Unsupported
+          <Badge variant="outline" className="text-xs text-gray-500">
+            Install
           </Badge>
         );
       default:
-        return (
-          <Badge variant="secondary" className="bg-gray-100 text-gray-800">
-            Unknown
-          </Badge>
-        );
+        return null;
     }
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md mx-4">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-xl">
-            <Wallet className="w-6 h-6" />
-            Connect Wallet
-          </DialogTitle>
+      <DialogContent className="mx-4 max-w-md max-h-[80vh] overflow-hidden">
+        <DialogHeader className="pb-4">
+          <div className="flex items-center justify-between">
+            <DialogTitle className="text-lg font-semibold">
+              Connect Wallet
+            </DialogTitle>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onClose}
+              className="h-8 w-8"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
         </DialogHeader>
 
-        <div className="space-y-4">
-          {/* All Wallets Section */}
-          <div>
-            <h3 className="text-sm font-semibold text-gray-700 mb-3">
-              Connect Your Wallet
-            </h3>
-            <div className="space-y-2">
-              {SUPPORTED_WALLETS.map((wallet) => {
-                const status = getWalletStatus(wallet);
-                return (
-                  <Card
-                    key={wallet.id}
-                    className="cursor-pointer hover:bg-gray-50 transition-all duration-200 border-2 hover:border-purple-200"
-                  >
-                    <CardContent className="p-4">
-                      <Button
-                        variant="ghost"
-                        className="w-full justify-start h-auto p-0"
-                        onClick={() => handleWalletConnect(wallet)}
-                        disabled={status === "unsupported" || isPending}
-                      >
-                        <div className="flex items-center space-x-3 w-full">
-                          <div className="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-xl">
-                            <span className="text-2xl">{wallet.icon}</span>
-                          </div>
-                          <div className="flex-1 text-left">
-                            <div className="flex items-center gap-2 mb-1">
-                              <p className="font-semibold text-base">
-                                {wallet.name}
-                              </p>
-                              {getStatusBadge(status)}
-                            </div>
-                            <p className="text-sm text-gray-600">
-                              {wallet.description}
-                            </p>
-                          </div>
-                          {status === "not-detected" ? (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                window.open(wallet.url, "_blank");
-                              }}
-                              className="flex items-center gap-1"
-                            >
-                              <Download className="w-3 h-3" />
-                              Install
-                            </Button>
-                          ) : status === "available" ? (
-                            <CheckCircle className="w-5 h-5 text-green-500" />
-                          ) : (
-                            <ExternalLink className="w-4 h-4 text-gray-400" />
+        <div className="space-y-3 max-h-[60vh] overflow-y-auto">
+          {SUPPORTED_WALLETS.map((wallet) => {
+            const status = getWalletStatus(wallet);
+            return (
+              <Card
+                key={wallet.id}
+                className="hover:shadow-md transition-shadow cursor-pointer"
+                onClick={() => handleWalletConnect(wallet)}
+              >
+                <CardContent className="p-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center text-xl">
+                        {wallet.icon}
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2">
+                          <h3 className="font-medium text-sm">{wallet.name}</h3>
+                          {wallet.popular && (
+                            <Badge variant="secondary" className="text-xs">
+                              Popular
+                            </Badge>
                           )}
                         </div>
-                      </Button>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          </div>
+                        <p className="text-xs text-gray-600 mt-1">
+                          {wallet.description}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      {getStatusBadge(status)}
+                      {status === "unavailable" && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            window.open(wallet.url, "_blank");
+                          }}
+                          className="h-6 w-6 p-0"
+                        >
+                          <Download className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
 
-          <div className="text-xs text-gray-500 text-center pt-4 border-t">
-            By connecting a wallet, you agree to our Terms of Service and
-            Privacy Policy
-          </div>
+        <div className="pt-4 border-t">
+          <p className="text-xs text-gray-500 text-center">
+            Don't have a wallet?{" "}
+            <Button
+              variant="link"
+              className="text-xs p-0 h-auto"
+              onClick={() =>
+                window.open("https://metamask.io/download/", "_blank")
+              }
+            >
+              Learn more
+            </Button>
+          </p>
         </div>
       </DialogContent>
     </Dialog>
