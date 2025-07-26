@@ -87,6 +87,13 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
   const [phoneStep, setPhoneStep] = useState<"input" | "code">("input");
   const recaptchaRef = useRef<any>(null);
 
+  // 2FA state variables
+  const [is2FAEnabled, setIs2FAEnabled] = useState(false);
+  const [qrCodeUrl, setQrCodeUrl] = useState("");
+  const [twoFactorCode, setTwoFactorCode] = useState("");
+  const [isEnabling2FA, setIsEnabling2FA] = useState(false);
+  const [show2FASetup, setShow2FASetup] = useState(false);
+
   // Real-time username uniqueness check
   const checkUsername = async (uname: string) => {
     setCheckingUsername(true);
