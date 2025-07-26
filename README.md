@@ -1,186 +1,156 @@
-# Crypto Exchange App
+# Biaz - Crypto Exchange App
 
-A comprehensive Web3 crypto exchange application built with Next.js 15.2.4 and modern blockchain technologies.
+A modern, mobile-first cryptocurrency exchange application built with Next.js, React, and TypeScript.
 
-## 🚀 Features
+## Features
 
-### 🔐 Authentication
-- **Firebase Auth**: Email/password and Google sign-in
-- **Web3 Wallet Integration**: Support for multiple wallet types
+- 🔐 **Secure Authentication** - Firebase Auth with email, phone, and Google sign-in
+- 💰 **Multi-Wallet Support** - Connect Ethereum and Solana wallets (no API keys needed)
+- 📊 **Real-time Market Data** - Live cryptocurrency prices via CoinGecko API
+- 🎨 **Modern UI/UX** - Mobile-first design with dark/light themes
+- 🔔 **Push Notifications** - Real-time alerts for transactions and price changes
+- 🛡️ **Security Features** - Passkey authentication, biometric login
+- 📱 **Mobile Optimized** - Touch-friendly interface with responsive design
 
-### 💼 Multi-Chain Wallet Support
-- **Ethereum**: MetaMask, WalletConnect, Coinbase Wallet
-- **Solana**: Phantom, Solflare, WalletConnect
-- **Multiple Networks**: Ethereum, Polygon, Arbitrum, Optimism, Base
+## Environment Setup
 
-### 💰 Core Functionality
-- **Real Portfolio Tracking**: Shows actual wallet balances and values
-- **Add Funds**: Generate deposit addresses for different networks
-- **Send Transactions**: Send tokens with wallet integration
-- **Market Data**: Real-time crypto prices (CoinGecko integration)
-- **Advanced Portfolio**: Shows gains/losses, price changes, and detailed analytics
-- **Buy/Sell Links**: Direct integration with Binance
+### 1. Create Environment File
 
-### 🎨 Modern UI
-- **Mobile-First**: Responsive design optimized for mobile
-- **Beautiful Interface**: Modern gradients and animations
-- **Dark/Light Mode**: Full theme switching support with system detection
-- **Toast Notifications**: User-friendly feedback
-- **Advanced Settings**: Phone verification, 2FA, password management
+Create a `.env.local` file in the root directory:
 
-## 🛠 Tech Stack
+```bash
+cp env.example .env.local
+```
 
-- **Frontend**: Next.js 15.2.4, React 19, TypeScript
-- **Styling**: Tailwind CSS, Radix UI components
-- **Web3**: Wagmi, Viem, Solana Web3.js
+### 2. Configure Environment Variables
+
+Edit `.env.local` with your actual API keys:
+
+```env
+# Firebase Configuration (Required)
+NEXT_PUBLIC_FIREBASE_API_KEY=your_firebase_api_key_here
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=123456789
+NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
+
+# CoinGecko API (Optional - has free tier)
+NEXT_PUBLIC_COINGECKO_API_KEY=your_coingecko_api_key_here
+
+# WalletConnect (Already configured - no API key needed)
+NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=c4f79cc821944d9680842e34466bfbd9
+```
+
+### 3. Get API Keys
+
+#### Firebase Setup (Required)
+
+1. Go to [Firebase Console](https://console.firebase.google.com/)
+2. Create a new project
+3. Enable Authentication (Email/Password, Phone, Google)
+4. Enable Firestore Database
+5. Copy your config from Project Settings
+
+#### CoinGecko API (Optional)
+
+1. Go to [CoinGecko API](https://www.coingecko.com/en/api)
+2. Sign up for a free API key
+3. Add your key to `NEXT_PUBLIC_COINGECKO_API_KEY`
+
+#### Wallet Connections (No API Keys Needed)
+
+- **MetaMask**: Works without any API keys
+- **Phantom**: Works without any API keys
+- **WalletConnect**: Already configured
+- **Other wallets**: Work directly with user's installed wallets
+
+## Installation
+
+```bash
+# Install dependencies
+npm install
+
+# Run development server
+npm run dev
+
+# Build for production
+npm run build
+```
+
+## Security Best Practices
+
+### Repository Privacy
+
+- **Public Repo**: Use `.env.local` (already in `.gitignore`) - this file won't be uploaded
+- **Private Repo**: You can use either `.env.local` or `.env` files
+- **Deployment**: Set environment variables in your hosting platform (Vercel, Netlify, etc.)
+
+### Environment Variables
+
+- Files starting with `.env.local` are automatically ignored by Git
+- Never commit actual API keys to your repository
+- Use different keys for development and production
+
+## Deployment
+
+### Vercel (Recommended)
+
+1. Connect your GitHub repository
+2. Add environment variables in Vercel dashboard
+3. Deploy automatically
+
+### Other Platforms
+
+- Set environment variables in your hosting platform
+- Ensure all `NEXT_PUBLIC_*` variables are configured
+
+## Tech Stack
+
+- **Frontend**: Next.js 15, React 19, TypeScript
+- **Styling**: Tailwind CSS, Radix UI
 - **Authentication**: Firebase Auth
-- **State Management**: React Context + Hooks
-- **Development**: ESLint, TypeScript strict mode
+- **Database**: Firestore
+- **Web3**: Wagmi, Viem, Solana Web3.js (no API keys needed)
+- **APIs**: CoinGecko (optional), WalletConnect (pre-configured)
+- **Deployment**: Vercel-ready
 
-## 🚀 Getting Started
+## Features Overview
 
-### Prerequisites
-- Node.js 18+ 
-- pnpm (recommended) or npm
+### Authentication
 
-### Installation
+- Email/Password sign-up and sign-in
+- Phone number verification (simulated for demo)
+- Google OAuth integration
+- Username uniqueness validation
+- Password reset functionality
 
-1. **Clone and install dependencies:**
-   ```bash
-   git clone <repository-url>
-   cd crypto-exchange-app
-   pnpm install
-   ```
+### Wallet Integration (No API Keys Required)
 
-2. **Set up environment variables:**
-   ```bash
-   cp .env.example .env.local
-   ```
+- **MetaMask**: Direct connection, no API needed
+- **Phantom**: Direct connection, no API needed
+- **WalletConnect**: Pre-configured, no API needed
+- **Other wallets**: Work with user's installed wallets
+- Multi-chain support (Ethereum, Solana, Polygon, etc.)
+- Real-time balance tracking
+- Transaction history
+- NFT/Collectibles display
 
-3. **Configure your environment variables:**
-   - Get a WalletConnect Project ID from [WalletConnect Cloud](https://cloud.walletconnect.com)
-   - (Optional) Get a CoinGecko API key for real market data
-   - (Optional) Configure custom RPC endpoints
+### Security
 
-4. **Run the development server:**
-   ```bash
-   pnpm dev
-   ```
+- Passkey authentication
+- Biometric login setup
+- Secure password management
 
-5. **Open [http://localhost:3000](http://localhost:3000)**
+### User Experience
 
-## 🔧 Configuration
+- Mobile-first responsive design
+- Dark/light theme support
+- Push notifications
+- Real-time market data
+- WhatsApp integration for trading
 
-### Required Setup
-
-1. **WalletConnect Project ID** (Required for wallet connections):
-   - Visit [WalletConnect Cloud](https://cloud.walletconnect.com)
-   - Create a new project
-   - Copy the Project ID to `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID`
-
-2. **CoinGecko API** (Optional for real market data):
-   - Visit [CoinGecko API](https://coingecko.com/en/api) - Free tier available!
-   - Get a free API key (optional, works without API key with rate limits)
-   - Add to `NEXT_PUBLIC_COINGECKO_API_KEY`
-
-### Wallet Support
-
-The app supports these wallet types:
-
-**Ethereum/EVM Networks:**
-- MetaMask
-- WalletConnect (mobile wallets)
-- Coinbase Wallet
-- Any injected wallet
-
-**Solana:**
-- Phantom
-- Solflare  
-- WalletConnect (mobile)
-
-**Supported Networks:**
-- Ethereum Mainnet
-- Polygon
-- Arbitrum
-- Optimism
-- Base
-- Solana Mainnet
-
-## 🎯 Usage
-
-### Connecting Wallets
-1. Click "Connect Wallet" anywhere in the app
-2. Choose between Ethereum or Solana
-3. Select your preferred wallet
-4. Approve the connection
-
-### Adding Funds
-1. Go to Wallet tab
-2. Click "Add Funds"
-3. Select network
-4. Copy the deposit address
-5. Send crypto to that address
-
-### Sending Transactions
-1. Go to Wallet tab
-2. Click "Send"
-3. Select token to send
-4. Enter recipient address and amount
-5. Confirm in your wallet
-
-### Trading
-- **Buy**: Direct links to Binance for purchasing crypto
-- **Sell**: Direct links to Binance trading pairs
-
-### Account Settings
-1. Go to Profile tab
-2. Click "Account Settings"
-3. Configure:
-   - **Phone Verification**: Add and verify phone number
-   - **Theme Settings**: Switch between light and dark themes
-   - **Password Change**: Update your account password
-   - **Two-Factor Authentication**: Enable/disable 2FA with authenticator apps
-   - **Notifications**: Configure email, push, and transaction alerts
-
-## 📱 Mobile Experience
-
-The app is optimized for mobile use with:
-- Touch-friendly interface
-- Mobile wallet integration
-- Responsive design
-- Native mobile wallet support
-
-## 🔒 Security
-
-- **No Private Keys**: App never stores private keys
-- **Wallet Integration**: All transactions go through connected wallets
-- **Address Validation**: Validates addresses before transactions
-- **Secure Authentication**: Firebase Auth for user accounts
-
-## 🚀 Deployment
-
-### Build for Production
-```bash
-pnpm build
-pnpm start
-```
-
-### Deploy to Vercel
-```bash
-# Install Vercel CLI
-npm i -g vercel
-
-# Deploy
-vercel
-```
-
-### Environment Variables for Production
-Make sure to set all environment variables in your deployment platform:
-- `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID`
-- `NEXT_PUBLIC_COINGECKO_API_KEY` (optional)
-- Firebase config variables (if overriding defaults)
-
-## 🤝 Contributing
+## Contributing
 
 1. Fork the repository
 2. Create a feature branch
@@ -188,16 +158,6 @@ Make sure to set all environment variables in your deployment platform:
 4. Test thoroughly
 5. Submit a pull request
 
-## 📄 License
+## License
 
-This project is open source and available under the MIT License.
-
-## 🆘 Support
-
-If you encounter any issues:
-1. Check the environment variables are set correctly
-2. Ensure your wallet is installed and unlocked
-3. Try refreshing the page
-4. Check browser console for errors
-
-For development issues, check that all dependencies are installed and you're using Node.js 18+.
+This project is licensed under the MIT License.

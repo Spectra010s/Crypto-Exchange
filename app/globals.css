@@ -98,7 +98,6 @@
   html,
   body {
     @apply h-full;
-    overflow: hidden; /* Prevent body scroll */
   }
 
   body {

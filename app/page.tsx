@@ -1362,9 +1362,9 @@ function CryptoExchangeApp() {
   };
 
   return (
-    <div className="h-full full-viewport flex flex-col max-w-md mx-auto bg-white/10 backdrop-blur-sm dark:bg-gray-900/10 overflow-hidden">
+    <div className="h-full full-viewport flex flex-col max-w-md mx-auto bg-white/10 backdrop-blur-sm dark:bg-gray-900/10">
       {/* Main Content */}
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 overflow-y-auto">
         <div className="h-full">{renderScreen()}</div>
       </div>
 
