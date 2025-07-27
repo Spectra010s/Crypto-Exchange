@@ -155,7 +155,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const updateWalletData = async () => {
     if (ethConnected && ethAddress) {
       const balances: TokenBalance[] = [];
-
+      
       if (ethBalance) {
         const ethAmount = parseFloat(ethBalance.formatted);
         const tokenId = tokenIdMapping["ETH"];
@@ -163,7 +163,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         const buyPrice = fallbackBuyPrices[tokenId] || 2800;
         const gainLoss = (currentPrice - buyPrice) * ethAmount;
         const gainLossPercentage = ((currentPrice - buyPrice) / buyPrice) * 100;
-
+        
         balances.push({
           symbol: "ETH",
           name: "Ethereum",
@@ -187,7 +187,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
           .map((b) => tokenIdMapping[b.symbol])
           .filter(Boolean);
         const realPrices = await fetchTokenPrices(tokenIds);
-
+        
         balances.forEach((balance) => {
           const tokenId = tokenIdMapping[balance.symbol];
           if (tokenId && realPrices[tokenId]) {
@@ -222,20 +222,20 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         const buyPrice = fallbackBuyPrices[tokenId] || 85;
         const gainLoss = (currentPrice - buyPrice) * solAmount;
         const gainLossPercentage = ((currentPrice - buyPrice) / buyPrice) * 100;
-
+        
         const balances: TokenBalance[] = [
           {
             symbol: "SOL",
             name: "Solana",
-            balance: solAmount,
-            value: solAmount * currentPrice,
-            address: solPublicKey.toString(),
-            currentPrice,
+          balance: solAmount,
+          value: solAmount * currentPrice,
+          address: solPublicKey.toString(),
+          currentPrice,
             priceChange24h: currentPrice * 0.08, // 8% fallback change
-            priceChangePercentage24h: 8.0,
-            gainLoss,
-            gainLossPercentage,
-            averageBuyPrice: buyPrice,
+          priceChangePercentage24h: 8.0,
+          gainLoss,
+          gainLossPercentage,
+          averageBuyPrice: buyPrice,
             image:
               "https://assets.coingecko.com/coins/images/4128/large/solana.png",
           },
@@ -327,9 +327,9 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       } else if (walletData.type === "solana") {
         await solDisconnect();
       }
-
+      
       setWalletData(defaultWalletData);
-
+      
       toast({
         title: "Disconnected",
         description: "Wallet disconnected successfully",
@@ -353,13 +353,13 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
   const generateDepositAddress = (network: NetworkType): string | null => {
     if (!walletData.isConnected) return null;
-
+    
     if (network === "solana" && walletData.type === "solana") {
       return walletData.address;
     } else if (network !== "solana" && walletData.type === "ethereum") {
       return walletData.address;
     }
-
+    
     return null;
   };
 

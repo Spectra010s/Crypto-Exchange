@@ -200,8 +200,8 @@ export function WalletConnectModal({
         <DialogHeader className="pb-4">
           <div className="flex items-center justify-between">
             <DialogTitle className="text-lg font-semibold">
-              Connect Wallet
-            </DialogTitle>
+            Connect Wallet
+          </DialogTitle>
             <Button
               variant="ghost"
               size="icon"
@@ -215,19 +215,19 @@ export function WalletConnectModal({
 
         <div className="space-y-3 max-h-[60vh] overflow-y-auto">
           {SUPPORTED_WALLETS.map((wallet) => {
-            const status = getWalletStatus(wallet);
-            return (
-              <Card
-                key={wallet.id}
+                const status = getWalletStatus(wallet);
+                return (
+                  <Card
+                    key={wallet.id}
                 className="hover:shadow-md transition-shadow cursor-pointer"
-                onClick={() => handleWalletConnect(wallet)}
+                        onClick={() => handleWalletConnect(wallet)}
               >
                 <CardContent className="p-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
                       <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center text-xl">
                         {wallet.icon}
-                      </div>
+                          </div>
                       <div className="flex-1">
                         <div className="flex items-center space-x-2">
                           <h3 className="font-medium text-sm">{wallet.name}</h3>
@@ -238,32 +238,32 @@ export function WalletConnectModal({
                           )}
                         </div>
                         <p className="text-xs text-gray-600 mt-1">
-                          {wallet.description}
-                        </p>
-                      </div>
+                              {wallet.description}
+                            </p>
+                          </div>
                     </div>
                     <div className="flex items-center space-x-2">
                       {getStatusBadge(status)}
                       {status === "unavailable" && (
-                        <Button
+                            <Button
                           variant="ghost"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            window.open(wallet.url, "_blank");
-                          }}
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                window.open(wallet.url, "_blank");
+                              }}
                           className="h-6 w-6 p-0"
-                        >
+                            >
                           <Download className="h-3 w-3" />
-                        </Button>
-                      )}
-                    </div>
+                            </Button>
+                          )}
+                        </div>
                   </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+          </div>
 
         <div className="pt-4 border-t">
           <p className="text-xs text-gray-500 text-center">

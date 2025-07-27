@@ -47,11 +47,11 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { AuthForm } from "@/components/auth/auth-form";
-import { AuthProvider, useAuth } from "@/hooks/use-auth";
+import { CustomAuthProvider, useCustomAuth } from "@/hooks/use-custom-auth";
 import { fetchCryptocurrencies, type CoinData } from "@/lib/coingecko";
 import { useToast } from "@/hooks/use-toast";
 import { useWalletContext } from "@/hooks/use-wallet";
-import { WalletConnectModal } from "@/components/wallet/wallet-connect-modal";
+import { WalletManager } from "@/components/wallet/wallet-manager";
 import { AddFundsModal } from "@/components/wallet/add-funds-modal";
 import { SendTransactionModal } from "@/components/wallet/send-transaction-modal";
 import { SettingsPage } from "@/components/settings/settings-page";
@@ -102,14 +102,14 @@ const transactions = [
 ];
 
 function CryptoExchangeApp() {
-  const { user, loading, logout, updateProfile } = useAuth();
+  const { user, loading, logout, updateProfile } = useCustomAuth();
   const { walletData, disconnectWallet, refreshBalances } = useWalletContext();
   const [activeTab, setActiveTab] = useState("home");
   const [activeSubTab, setActiveSubTab] = useState("");
   const [balanceVisible, setBalanceVisible] = useState(true);
   const [marketData, setMarketData] = useState<CoinData[]>([]);
   const [loadingMarketData, setLoadingMarketData] = useState(true);
-  const [walletModalOpen, setWalletModalOpen] = useState(false);
+  const [walletManagerOpen, setWalletManagerOpen] = useState(false);
   const [addFundsModalOpen, setAddFundsModalOpen] = useState(false);
   const [sendModalOpen, setSendModalOpen] = useState(false);
   const [profilePicModalOpen, setProfilePicModalOpen] = useState(false);
@@ -274,10 +274,10 @@ function CryptoExchangeApp() {
                     <Button
                       size="sm"
                       variant="secondary"
-                      onClick={() => setWalletModalOpen(true)}
+                      onClick={() => setWalletManagerOpen(true)}
                       className="text-purple-600 touch-target"
                     >
-                      Connect Wallet
+                      Create Wallet
                     </Button>
                   )}
                 </div>
@@ -357,11 +357,11 @@ function CryptoExchangeApp() {
                 Connect your wallet to see your portfolio
               </p>
               <Button
-                onClick={() => setWalletModalOpen(true)}
+                onClick={() => setWalletManagerOpen(true)}
                 className="touch-target"
               >
                 <Wallet className="w-4 h-4 mr-2" />
-                Connect Wallet
+                Create Wallet
               </Button>
             </div>
           )}
@@ -1484,9 +1484,9 @@ function CryptoExchangeApp() {
       </Dialog>
 
       {/* Modals */}
-      <WalletConnectModal
-        isOpen={walletModalOpen}
-        onClose={() => setWalletModalOpen(false)}
+      <WalletManager
+        isOpen={walletManagerOpen}
+        onClose={() => setWalletManagerOpen(false)}
       />
       <AddFundsModal
         isOpen={addFundsModalOpen}
@@ -1502,8 +1502,8 @@ function CryptoExchangeApp() {
 
 export default function App() {
   return (
-    <AuthProvider>
+    <CustomAuthProvider>
       <CryptoExchangeApp />
-    </AuthProvider>
+    </CustomAuthProvider>
   );
 }
