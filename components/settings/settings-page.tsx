@@ -35,25 +35,16 @@ import {
   Trash2,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/use-auth";
+
 import { useTheme } from "next-themes";
-import { auth, db } from "@/lib/firebase";
-import {
-  EmailAuthProvider,
-  PhoneAuthProvider,
-  linkWithCredential,
-  updateProfile,
-  reauthenticateWithCredential,
-  updatePassword,
-} from "firebase/auth";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { useCustomAuth } from "@/hooks/use-custom-auth";
 
 interface SettingsPageProps {
   onBack?: () => void;
 }
 
 export function SettingsPage({ onBack }: SettingsPageProps) {
-  const { user } = useAuth();
+  const { user } = useCustomAuth();
   const { theme, setTheme } = useTheme();
   const { toast } = useToast();
 

@@ -4,7 +4,7 @@ A modern, mobile-first cryptocurrency exchange application built with Next.js, R
 
 ## Features
 
-- 🔐 **Secure Authentication** - Firebase Auth with email, phone, and Google sign-in
+- 🔐 **Secure Authentication** - Custom auth system with email, phone, username, and passkey support
 - 💰 **Multi-Wallet Support** - Connect Ethereum and Solana wallets (no API keys needed)
 - 📊 **Real-time Market Data** - Live cryptocurrency prices via CoinGecko API
 - 🎨 **Modern UI/UX** - Mobile-first design with dark/light themes
@@ -27,13 +27,25 @@ cp env.example .env.local
 Edit `.env.local` with your actual API keys:
 
 ```env
-# Firebase Configuration (Required)
-NEXT_PUBLIC_FIREBASE_API_KEY=your_firebase_api_key_here
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=123456789
-NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
+# Database Configuration (Required)
+DATABASE_URL=postgresql://postgres:[password]@[project].supabase.co:5432/postgres
+
+# JWT Secret (Required)
+JWT_SECRET=your-super-secret-jwt-key-here-minimum-64-characters-long
+
+# SMS Provider - Twilio (Required)
+NEXT_PUBLIC_TWILIO_ACCOUNT_SID=your_twilio_account_sid
+NEXT_PUBLIC_TWILIO_AUTH_TOKEN=your_twilio_auth_token
+NEXT_PUBLIC_TWILIO_FROM_NUMBER=+1234567890
+
+# Email Provider - Resend (Required)
+NEXT_PUBLIC_RESEND_API_KEY=your_resend_api_key
+NEXT_PUBLIC_FROM_EMAIL=onboarding@resend.dev
+
+# File Storage - Cloudinary (Required)
+NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=your_cloud_name
+NEXT_PUBLIC_CLOUDINARY_API_KEY=your_api_key
+NEXT_PUBLIC_CLOUDINARY_API_SECRET=your_api_secret
 
 # CoinGecko API (Optional - has free tier)
 NEXT_PUBLIC_COINGECKO_API_KEY=your_coingecko_api_key_here
@@ -109,7 +121,7 @@ npm run build
 
 - **Frontend**: Next.js 15, React 19, TypeScript
 - **Styling**: Tailwind CSS, Radix UI
-- **Authentication**: Firebase Auth
+- **Authentication**: Custom auth system with JWT
 - **Database**: Firestore
 - **Web3**: Wagmi, Viem, Solana Web3.js (no API keys needed)
 - **APIs**: CoinGecko (optional), WalletConnect (pre-configured)
