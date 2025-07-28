@@ -18,7 +18,7 @@ A modern, mobile-first cryptocurrency exchange application built with Next.js, R
 
 Create a `.env.local` file in the root directory:
 
-```bash
+   ```bash
 cp env.example .env.local
 ```
 
