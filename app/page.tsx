@@ -785,14 +785,14 @@ function CryptoExchangeApp() {
                 </div>
 
                 {/* NFT Gallery Placeholder */}
-                <div className="text-center py-6 sm:py-8">
-                  <ImageIcon className="w-12 h-12 sm:w-16 sm:h-16 mx-auto text-gray-400 mb-4" />
-                  <p className="text-gray-500 mb-4 text-sm sm:text-base">
-                    No NFTs found
-                  </p>
+              <div className="text-center py-6 sm:py-8">
+                <ImageIcon className="w-12 h-12 sm:w-16 sm:h-16 mx-auto text-gray-400 mb-4" />
+                <p className="text-gray-500 mb-4 text-sm sm:text-base">
+                  No NFTs found
+                </p>
                   <p className="text-xs text-gray-400 mb-4">
-                    NFTs will appear here when you own them
-                  </p>
+                  NFTs will appear here when you own them
+                </p>
                   <Button variant="outline" size="sm" className="touch-target">
                     <Globe className="w-4 h-4 mr-2" />
                     View on Explorer
@@ -1236,9 +1236,9 @@ function CryptoExchangeApp() {
 
         {/* Username Display Only - No Editing */}
         <div className="space-y-2">
-          <h1 className="text-xl sm:text-2xl font-bold">
-            {user.displayName || "User"}
-          </h1>
+              <h1 className="text-xl sm:text-2xl font-bold">
+                {user.displayName || "User"}
+              </h1>
           <p className="text-gray-500 text-sm">
             Username can be changed in Account Settings
           </p>

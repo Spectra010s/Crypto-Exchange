@@ -475,3 +475,4 @@ export function WalletManager({ isOpen, onClose }: WalletManagerProps) {
     </Dialog>
   );
 }
+ 
