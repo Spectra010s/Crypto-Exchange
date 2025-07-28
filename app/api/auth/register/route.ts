@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-
-// Mock database - replace with real database
-const users: any[] = [];
+import {
+  createUser,
+  findUserByEmail,
+  findUserByPhone,
+  findUserByUsername,
+} from "@/lib/database";
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,12 +22,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user already exists
-    const existingUser = users.find(
-      (user) =>
-        (email && user.email === email) ||
-        (phone && user.phone === phone) ||
-        (username && user.username === username)
-    );
+    const existingUser =
+      (email && (await findUserByEmail(email))) ||
+      (phone && (await findUserByPhone(phone))) ||
+      (username && (await findUserByUsername(username)));
 
     if (existingUser) {
       return NextResponse.json(
@@ -38,22 +39,13 @@ export async function POST(request: NextRequest) {
     const passwordHash = await bcrypt.hash(password, saltRounds);
 
     // Create user
-    const user = {
-      id: Date.now().toString(),
+    const user = await createUser({
       email,
       phone,
       username,
       displayName: displayName || email?.split("@")[0] || `User${Date.now()}`,
       passwordHash,
-      emailVerified: false,
-      phoneVerified: false,
-      passkeyEnabled: false,
-      biometricEnabled: false,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-
-    users.push(user);
+    });
 
     // Generate JWT token
     const token = jwt.sign(
@@ -63,7 +55,7 @@ export async function POST(request: NextRequest) {
     );
 
     // Remove sensitive data
-    const { passwordHash: _, ...userWithoutPassword } = user;
+    const { password_hash: _, ...userWithoutPassword } = user;
 
     return NextResponse.json({
       user: userWithoutPassword,
@@ -78,4 +70,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
- 
