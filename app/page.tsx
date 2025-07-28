@@ -1192,6 +1192,7 @@ function CryptoExchangeApp() {
             <Button
               variant="outline"
               className="w-full justify-start touch-target"
+              onClick={() => setShowPrivacyPolicy(true)}
             >
               <div className="text-left">
                 <p className="font-medium text-sm sm:text-base">
@@ -1206,6 +1207,7 @@ function CryptoExchangeApp() {
             <Button
               variant="outline"
               className="w-full justify-start touch-target"
+              onClick={() => setShowTermsOfService(true)}
             >
               <div className="text-left">
                 <p className="font-medium text-sm sm:text-base">
@@ -1345,6 +1347,12 @@ function CryptoExchangeApp() {
   );
 
   const renderScreen = () => {
+    if (showPrivacyPolicy) {
+      return <PrivacyPolicy onBack={() => setShowPrivacyPolicy(false)} />;
+    }
+    if (showTermsOfService) {
+      return <TermsOfService onBack={() => setShowTermsOfService(false)} />;
+    }
     if (activeSubTab === "security") return <SecurityScreen />;
     if (activeSubTab === "notifications") return <NotificationsScreen />;
     if (activeSubTab === "help") return <HelpSupportScreen />;
